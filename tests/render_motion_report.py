@@ -44,7 +44,7 @@ function line(ctx,x,y,color){ctx.strokeStyle=color;ctx.beginPath();rows.forEach(
 function change(){rows=data.groups[select.value];t=0;const measured=rows.filter(r=>r[0]>=2),tail=rows.filter(r=>r[0]>=4);
  const rms=(a,b)=>Math.sqrt(measured.reduce((s,r)=>s+(r[a]-r[3])**2+(r[b]-r[4])**2,0)/measured.length);
  const raw=rms(1,2),out=rms(5,6),dwell=tail.filter(r=>Math.hypot(r[5]-r[3],r[6]-r[4])<=12).length/tail.length;
- document.querySelector('#metrics').textContent=`Raw RMS error: ${raw.toFixed(1)} px. Filtered RMS error: ${out.toFixed(1)} px. `+(select.value.includes('without_shake')?'':`Error reduction: ${(100*(1-out/raw)).toFixed(1)}%. `)+`Target dwell: ${(100*dwell).toFixed(1)}%.`;
+ document.querySelector('#metrics').textContent=`Raw RMS error: ${raw.toFixed(1)} px. Filtered RMS error: ${out.toFixed(1)} px. `+((select.value.includes('without_shake')||raw<1e-9)?'':`Error reduction: ${(100*(1-out/raw)).toFixed(1)}%. `)+`Target dwell: ${(100*dwell).toFixed(1)}%.`;
  const c=document.querySelector('#chart').getContext('2d');c.clearRect(0,0,1100,300);c.lineWidth=2;
  const max=Math.max(100,...rows.flatMap(r=>[Math.abs(r[1]),Math.abs(r[3]),Math.abs(r[5])]));
  const x=r=>50+r[0]/6*1000,y=v=>150-v/max*120;
