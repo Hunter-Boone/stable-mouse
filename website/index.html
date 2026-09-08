@@ -65,8 +65,11 @@
         <legend>Try your settings</legend>
         <button id="demo-toggle" class="button primary" type="button" aria-pressed="true">Turn Stability Off</button>
         <p id="demo-status" class="small" role="status">Demo stability is on</p>
-        <p class="demo-amount-label">How much smoothing?</p>
+        <fieldset class="demo-setting"><legend>How much smoothing?</legend>
         <div class="demo-presets" role="group" aria-label="Smoothing presets"><button type="button" data-strength="25">Light</button><button type="button" data-strength="55">Balanced</button><button type="button" data-strength="85">Strong</button></div>
+          <label for="demo-strength">Smoothing strength <output id="demo-strength-value" for="demo-strength">55%</output></label>
+          <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
+        </fieldset>
         <fieldset id="demo-center-method" class="demo-methods" aria-describedby="demo-center-help">
           <legend>How to steady movement</legend>
           <label class="demo-method"><input type="radio" name="center-method" value="off" checked><span>Smoothing only</span></label>
@@ -74,18 +77,16 @@
           <label class="demo-method"><input type="radio" name="center-method" value="always"><span>Always follow the center</span></label>
         </fieldset>
         <p id="demo-center-help">Softens all mouse movement.</p>
-        <details class="demo-more">
-          <summary>More options</summary>
-          <label for="demo-strength">Smoothing strength <output id="demo-strength-value" for="demo-strength">55%</output></label>
-          <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
           <div class="demo-window-control" hidden>
             <label for="demo-center-window">Center window <output id="demo-center-window-value" for="demo-center-window">250 ms</output></label>
             <input id="demo-center-window" type="range" min="100" max="600" value="250" step="25">
             <p>A longer window can feel steadier, but takes longer to follow your hand.</p>
           </div>
           <p id="demo-center-status" role="status">Center tracking is off.</p>
-          <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
-        </details>
+        <fieldset class="demo-setting"><legend>Pointer speed</legend>
+          <p>100% in this demo, so both cursors use the same movement scale. You can adjust pointer speed in the desktop app.</p>
+        </fieldset>
+        <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
       </fieldset>
       <div class="demo-workspace">
         <div class="demo-area" role="group" aria-label="Cursor comparison practice area" aria-describedby="demo-instructions" tabindex="0">

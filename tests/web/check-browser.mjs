@@ -41,11 +41,8 @@ await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',win
 assert.equal(await evaluate("document.querySelector('#demo-toggle').getAttribute('aria-pressed')"),'false');
 // Demo speed is fixed; the smoothing slider still supports keyboard operation.
 assert.equal(await evaluate("document.querySelector('#demo-speed')"),null);
-assert.equal(await evaluate("document.querySelector('.demo-more').open"),false);
-await evaluate("document.querySelector('.demo-more summary').focus()");
-await send('Input.dispatchKeyEvent',{type:'keyDown',text:'\r',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
-await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
-assert.equal(await evaluate("document.querySelector('.demo-more').open"),true);
+assert.equal(await evaluate("document.querySelector('.demo-more')"),null);
+assert.equal(await evaluate("document.querySelector('#demo-strength').closest('fieldset').querySelector('legend').textContent"),'How much smoothing?');
 await evaluate("document.querySelector('#demo-strength').focus()");
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
 await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
@@ -136,7 +133,6 @@ const experiment = await evaluate(`(() => {
   const area = document.querySelector('.demo-area');
   const method = document.querySelector('#demo-center-method');
   const windowInput = document.querySelector('#demo-center-window');
-  document.querySelector('.demo-more').open=true;
   const rect = area.getBoundingClientRect();
   const pointer = (type, x, y) => area.dispatchEvent(new PointerEvent(type, {
     pointerType:'mouse', clientX:rect.left+x, clientY:rect.top+y, bubbles:true,
