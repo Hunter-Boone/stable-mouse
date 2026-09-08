@@ -77,3 +77,60 @@ python3 tests/render_motion_report.py motion-traces.csv motion-report.html --lab
 
 Use a Windows trace and an explicit Windows label to visualize native results.
 The report runs locally in a browser and makes no network requests.
+
+## Expanded results, September 8, 2026
+
+With the unchanged 0.1.1 filter, Strong 85% and speed 100%, the portable simulation
+produced the following results after warmup. Reduction is RMS error reduction.
+
+| Input | Reduction | Largest residual distance from target |
+| --- | ---: | ---: |
+| 300-pixel span, 4 Hz | 95.0% | 7 px |
+| 1,200-pixel span, 4 Hz | 94.9% | 30 px |
+| 1,200-pixel span, 2 Hz | 82.2% | 106 px |
+| 600-pixel span, 1 Hz | 53.5% | 139 px |
+| Irregular movement on both axes | 90.4% | 52 px |
+
+A 95% reduction still left the large 4 Hz case inside a 24-pixel-diameter target
+only 27% of the final two seconds. The prescribed reach with shaking had 77.4%
+less RMS error, including lag, and 54% final target dwell at Strong. Maximum
+smoothing increased final target dwell to 98% but made error during the reach
+worse. This is why attenuation alone cannot establish usability.
+
+For the clean 300-pixel reach, the filter first came within 12 pixels of the target
+88 ms after the intended reach ended at Balanced, 464 ms at Strong, and 744 ms at
+Maximum. These are settling measurements for this specific path, not a fixed
+latency for every movement.
+
+The first expanded [Windows CI replay](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34250766617)
+passed all seven native scenarios, hook restart and the emergency pause check.
+Its RMS reductions were 94.7%, 93.3%, 82.1%, 52.9%, and 90.3% for the five stationary
+cases above. Native timer scheduling and pixel output can change the measurements
+relative to the portable simulation. This run's macOS benchmark exposed an exact
+floating-point aggregate comparison in the test; the check now compares each
+bypassed output sample directly to the input. Ubuntu tests and packaging passed,
+but GitHub rejected the artifact finalization request with HTTP 403.
+
+The follow-up [workflow](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34251051206)
+passed every job on Windows, macOS and Ubuntu, including native Windows replay
+and packaged launches, at revision `663583d74cfd0d261bce136d229b36694a74be4f`.
+
+A coordinated 42-second replay on the user's Windows workstation with three
+monitors also passed all seven scenarios, restart and emergency pause. Strong 85%
+and speed 100% produced:
+
+| Input | RMS error reduction | Peak residual error | Final target dwell |
+| --- | ---: | ---: | ---: |
+| 300-pixel span, 4 Hz | 94.9% | 9 px | 100% |
+| 1,200-pixel span, 4 Hz | 94.8% | 40 px | 27.0% |
+| 1,200-pixel span, 2 Hz | 82.2% | 110 px | 8.8% |
+| 600-pixel span, 1 Hz | 53.5% | 139 px | 6.0% |
+| Irregular movement on both axes | 90.2% | 53 px | 36.0% |
+| Reach with increasing shake | 76.9% | 144 px | 55.8% |
+
+The clean reach had 50.1 pixels RMS tracking error and 100% final target dwell.
+It first entered the 12-pixel target radius 480 ms after the intended reach ended.
+The cursor position was restored after replay. No clicks were injected. The local
+CSV and interactive report contain generated test inputs and measured replay
+output, not the user's hand movement. The application and its installer did not
+change during this test expansion.
