@@ -33,8 +33,9 @@ await mouse(-10,-10);assert.equal((await state()).hidden,true);await mouse(110,9
 await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('input[name=center-method][value=detected]').click()");
 assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('input[name=center-method]:checked').value"),'detected');
 await evaluate("document.querySelector('#demo-toggle').click()");await mouse(140,160);await mouse(230,250);s=await state();assert.equal(s.x,230);assert.equal(s.y,250);
-// Reset and keyboard pause.
-await evaluate("document.querySelector('#demo-reset').click()");assert.equal((await state()).mark,false);
+// Removed controls stay absent; keyboard pause still works.
+assert.equal(await evaluate("document.querySelector('#demo-reset')"), null);
+assert.equal(await evaluate("[...document.querySelectorAll('.demo-setting legend')].some(el=>el.textContent==='Pointer speed')"), false);
 await evaluate("document.querySelector('#demo-toggle').click();document.querySelector('.demo-area').focus()");
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
 await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
@@ -178,6 +179,7 @@ for (const mode of ['off', 'detected', 'always']) {
   for (const type of ['mousePressed','mouseReleased'])
     await send('Input.dispatchMouseEvent',{type,x:row.x,y:row.y,button:'left',clickCount:1});
   assert.equal(await evaluate("document.querySelector('input[name=center-method]:checked').value"),mode);
+  assert.equal(await evaluate("document.querySelector('#demo-center-help').hidden"),mode === 'off');
 }
 await evaluate("document.querySelector('input[name=center-method][value=always]').focus()");
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft',windowsVirtualKeyCode:37});

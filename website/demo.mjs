@@ -95,7 +95,8 @@ function configure() {
   toggle.setAttribute('aria-pressed', String(enabled));
   section.querySelector('.demo-window-control').hidden = method.querySelector('input:checked').value !== 'always';
   section.querySelector('#demo-center-window-value').textContent = `${centerWindow.value} ms`;
-  centerHelp.textContent = mode === 'off' ? 'Softens all mouse movement.'
+  centerHelp.hidden = mode === 'off';
+  centerHelp.textContent = mode === 'off' ? ''
     : mode === 'always' ? 'Follows the center of recent movement. This can feel steadier, but slower.'
     : 'Looks for back-and-forth shaking before following its center.';
   section.querySelectorAll('[data-strength]').forEach(button => {
@@ -121,7 +122,6 @@ section.querySelectorAll('[data-strength]').forEach(button => button.addEventLis
   strength.value = button.dataset.strength; configure();
 }));
 toggle.addEventListener('click', () => { enabled = !enabled; leave(); configure(); });
-section.querySelector('#demo-reset').addEventListener('click', () => { leave(); mark.hidden = true; });
 section.addEventListener('keydown', event => {
   if (event.key === 'Escape') { enabled = false; leave(); configure(); }
 });

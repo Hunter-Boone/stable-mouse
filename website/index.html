@@ -76,17 +76,13 @@
           <label class="demo-method"><input type="radio" name="center-method" value="detected"><span>Recognize shaking</span></label>
           <label class="demo-method"><input type="radio" name="center-method" value="always"><span>Always follow the center</span></label>
         </fieldset>
-        <p id="demo-center-help">Softens all mouse movement.</p>
+        <p id="demo-center-help" hidden></p>
           <div class="demo-window-control" hidden>
             <label for="demo-center-window">Center window <output id="demo-center-window-value" for="demo-center-window">250 ms</output></label>
             <input id="demo-center-window" type="range" min="100" max="600" value="250" step="25">
             <p>A longer window can feel steadier, but takes longer to follow your hand.</p>
           </div>
           <p id="demo-center-status" role="status">Center tracking is off.</p>
-        <fieldset class="demo-setting"><legend>Pointer speed</legend>
-          <p>100% in this demo, so both cursors use the same movement scale. You can adjust pointer speed in the desktop app.</p>
-        </fieldset>
-        <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
       </fieldset>
       <div class="demo-workspace">
         <div class="demo-area" role="group" aria-label="Cursor comparison practice area" aria-describedby="demo-instructions" tabindex="0">
