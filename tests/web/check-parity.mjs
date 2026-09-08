@@ -37,6 +37,21 @@ for (const mode of ['step', 'pixels']) {
     }
   }
 }
+// Unequal half-cycles must exercise recognition too, not only the fallback.
+for (const mode of ['step', 'pixels']) for (const hz of [60, 125, 1000]) {
+  op('reset'); op('config', 85, 1, 1);
+  let time=0, duration=.125, from=0, to=65, previous=0;
+  for (let i=0; i<hz*8; i++) {
+    const t=i/hz;
+    while (t>=time+duration) {
+      time+=duration; from=to;
+      to=-Math.sign(to)*65*(1+.7*random());
+      duration=.125*(1+.7*random());
+    }
+    const x=t<6 ? Math.round(from+(to-from)*(.5-.5*Math.cos(Math.PI*(t-time)/duration))) : 0;
+    op('add', x-previous, 0); previous=x; op(mode, 1/hz);
+  }
+}
 const result = spawnSync(process.argv[2], [], {
   input: operations.map(args => args.join(' ')).join('\n') + '\n',
   encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,

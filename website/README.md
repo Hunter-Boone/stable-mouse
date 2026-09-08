@@ -33,10 +33,13 @@ node tests/web/check-parity.mjs /tmp/filter-reference
 
 The workflow also serves the real page to headless Chrome and checks pointer
 movement, click/drag alignment, controls, keyboard operation, and layouts down to
-320px. A controlled browser clock also replays identical regular shaking with
+320px. A controlled browser clock also replays identical regular and uneven shaking with
 center tracking on and off, verifies recognition, and checks that it returns to
 ordinary smoothing after movement stops. This is a generated input test, not a
 measurement of how well it handles a person's tremor.
+
+The development filter tolerates more variation than release 0.1.2. Keep that
+distinction visible until installers containing the updated detector are released.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 

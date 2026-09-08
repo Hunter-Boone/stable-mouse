@@ -28,17 +28,20 @@ int main() {
         check(maxReleaseSpeed<2200,"release has no prototype-sized position jump");
         check(std::abs(output)<.2,"released motion settles without a lasting offset");
     }
-    // Unrecognized irregular movement and clean fine corrections use exactly the
-    // ordinary filter. Center detection must not classify travel size as intent.
+    // Clean travel uses exactly the ordinary filter. Irregular oscillation can
+    // now engage tracking, so test its output instead of requiring it to stay off.
     for(auto scenario : {scenarios::cases[4],scenarios::cases[6]}) {
         Stabilizer normal,center;normal.configure({85,1});center.configure({85,1,true});
         Motion previous{},a{},b{};
+        scenarios::Metrics normalMetrics, centerMetrics;
         for(int i=0;i<750;++i){
             auto s=scenarios::sample(scenario,i*.008);
             normal.add(s.raw.x-previous.x,s.raw.y-previous.y);center.add(s.raw.x-previous.x,s.raw.y-previous.y);previous=s.raw;
             auto da=normal.step(.008),db=center.step(.008);a.x+=da.x;a.y+=da.y;b.x+=db.x;b.y+=db.y;
-            check(std::hypot(a.x-b.x,a.y-b.y)<1e-6,"fallback preserves ordinary filtering");
+            if(scenario.kind==2) check(std::hypot(a.x-b.x,a.y-b.y)<1e-6,"clean travel preserves ordinary filtering");
+            normalMetrics.add(i*.008,s,a);centerMetrics.add(i*.008,s,b);
         }
+        if(scenario.kind==1) check(centerMetrics.errorRms()<normalMetrics.errorRms(),"mixed-axis irregular input improves on ordinary smoothing");
     }
     Stabilizer filter;filter.configure({85,1,true});
     double total=0;

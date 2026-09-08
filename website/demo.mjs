@@ -22,7 +22,7 @@ function showCenterStatus() {
     : !enabled ? 'Center tracking is paused.'
     : Number(strength.value) === 0 ? 'Increase smoothing strength to use center tracking.'
     : axes.length ? `Tracking the ${axes.join(' and ')} center.`
-    : 'Waiting for regular shaking. Using ordinary smoothing.';
+    : 'Waiting for repeated reversals. Using ordinary smoothing.';
   if (centerStatus.textContent !== message) centerStatus.textContent = message;
 }
 function paint() {

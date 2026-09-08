@@ -17,22 +17,23 @@ class CenterTracker {
     this.stage += pending * alpha;
     if (!this.direction && Math.abs(this.raw - this.peak) >= 1) this.direction = this.raw > this.peak ? 1 : -1;
     if ((this.direction > 0 && this.raw > this.peak) || (this.direction < 0 && this.raw < this.peak)) this.peak = this.raw;
-    if (this.direction && (this.raw - this.peak) * this.direction <= -1) {
+    if (this.direction && (this.raw - this.peak) * this.direction <= -Math.max(4, Math.min(12, this.previousSpan * .06))) {
       const interval = this.time - this.lastTurn, span = Math.abs(this.peak - this.previousPeak);
       const candidate = (this.peak + this.previousPeak) / 2, centerStep = candidate - this.priorCenter;
       const plausible = this.turns >= 3 && interval >= .03 && interval <= .6
-        && interval / this.previousInterval >= .7 && interval / this.previousInterval <= 1.3
-        && span >= 2 && span / this.previousSpan >= .5 && span / this.previousSpan <= 2
-        && Math.abs(centerStep - this.priorCenterStep) <= Math.max(3, span * .02);
-      this.consistent = plausible ? Math.min(this.consistent + 1, 3) : 0;
-      this.locked = this.consistent >= 3;
-      if (this.locked) this.center = candidate;
+        && interval / this.previousInterval >= .4 && interval / this.previousInterval <= 2.5
+        && span >= 2 && span / this.previousSpan >= .35 && span / this.previousSpan <= 2.8
+        && Math.abs(centerStep - this.priorCenterStep) <= Math.max(4, span * .3);
+      const wasLocked = this.locked;
+      this.consistent = plausible ? Math.min(this.consistent + 1, 5) : Math.max(0, this.consistent - 2);
+      this.locked = this.consistent >= (wasLocked ? 2 : 3);
+      if (this.locked && plausible) this.center = wasLocked ? this.center + .3 * (candidate - this.center) : candidate;
       this.priorCenter = candidate; this.priorCenterStep = centerStep;
       this.previousPeak = this.peak; this.previousInterval = interval; this.previousSpan = span;
       this.lastTurn = this.time; this.turns = Math.min(this.turns + 1, 4);
       this.direction = -this.direction; this.peak = this.raw;
     }
-    if (this.locked && this.time - this.lastTurn > Math.min(.7, this.previousInterval * 1.6)) {
+    if (this.locked && this.time - this.lastTurn > Math.min(.7, this.previousInterval * 2.5)) {
       this.locked = false; this.consistent = 0;
     }
     this.blend += -Math.expm1(-dt / .08) * ((this.locked ? 1 : 0) - this.blend);

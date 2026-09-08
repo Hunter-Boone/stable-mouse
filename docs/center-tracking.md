@@ -106,3 +106,56 @@ folder and failed to launch. Copying the complete runtime fixed it. The correcte
 copy passed a launch check and its actual window was inspected, paused with center
 tracking selected. The downloadable installer already contained that folder and
 had passed its installation-and-launch check.
+
+## Development update: uneven reversals
+
+The browser demo and current app source now use a more tolerant detector. The
+published 0.1.2 installers still use the earlier rules; the website identifies
+this difference. This update does not change the ordinary smoothing setting.
+
+The old detector required three consecutive supporting reversals. Each new
+half-cycle had to be 70–130% as long as the last, and the change in successive
+midpoint steps had to stay within 3 pixels or 2% of the swing span. A single
+rejection dropped tracking immediately. A retreat of only 1 pixel counted as a
+new reversal, so sampling noise could repeatedly interrupt recognition.
+
+The updated detector:
+
+- Requires a 4–12 pixel retreat from a turning point, scaled to the recent span,
+  so small backsteps do not count as full reversals.
+- Allows a half-cycle to be 40–250% of the previous duration, within the existing
+  absolute 30–600 ms interval. Swing spans may be 35–280% of the previous span.
+- Allows changes in midpoint steps up to 4 pixels or 30% of the current span.
+- Acquires after three supporting reversals following initial observations.
+  Confidence builds to five; a rejection subtracts two. An established lock can
+  survive one rejection, but two consecutive rejections release it.
+- Updates the center only from accepted reversals, moving 30% toward each new
+  midpoint. It releases after 2.5 previous half-cycle durations without a reversal,
+  capped at 700 ms, then fades toward ordinary smoothing as before.
+
+These are engineering thresholds, not a definition of a person's tremor. Small
+motions that do not cross the retreat threshold retain ordinary smoothing.
+Intentional oscillation can still engage tracking. More averaging can add delay
+when reaching while shaking; matching the midpoint cannot prove intent.
+
+`variance_tests` uses 20 deterministic seeds at 60, 125, 250, and 1,000 Hz, Strong
+85%, speed 100%, and a nominal 130-pixel swing span. Timing and amplitude vary
+independently per half-cycle. All cases include a subsequent 160-pixel reach and
+stationary hold to check release and conserved movement. Mean stationary RMS
+across rates and seeds, in pixels:
+
+| Generated input | Previous center detector | Updated detector |
+| --- | ---: | ---: |
+| Timing varies ±40% | 2.52 | 0.05 |
+| Amplitude varies ±40% | 6.71 | 5.59 |
+| Both vary independently ±35% | 6.32 | 4.92 |
+| Regular wave plus ±2px sampling noise | 1.70 | 0.36 |
+| Two superimposed frequencies | 4.03 | 3.22 |
+
+The separate existing two-axis irregular scenario improved RMS from 23.60 pixels
+with ordinary smoothing to 22.52 pixels with the updated detector. In the reach
+with ongoing shaking scenario, RMS increased from ordinary smoothing's 49.50 to
+65.80 pixels over the measured interval, although final two-second target dwell
+was 100%. A clean reach remains identical to ordinary smoothing. These generated
+results are not clinical validation, and native workstation testing of this
+update remains pending.

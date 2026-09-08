@@ -71,7 +71,7 @@
         <input id="demo-speed" type="range" min="25" max="200" value="100" step="1">
         <label class="demo-check" for="demo-center"><input id="demo-center" type="checkbox">Track the center of repeated shaking <span class="small">Preview</span></label>
         <p id="demo-center-status" class="small" role="status">Center tracking is off.</p>
-        <p class="small">More smoothing adds delay. Center tracking needs several consistent back-and-forth movements. Irregular shaking may keep it in ordinary smoothing.</p>
+        <p class="small">More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.</p>
         <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
       </fieldset>
       <div class="demo-workspace">
@@ -86,7 +86,7 @@
         <p id="demo-instructions" class="small">Try holding the teal pointer over a target. Click to mark its position; clicking and dragging keep movement continuous. At 100% pointer speed, the cursors settle together after you stop, unless the teal cursor has reached an edge. Move out and back in to align them again. Escape pauses the demo while this section has focus.</p>
       </div>
     </div>
-    <p class="demo-limits">If Stable Mouse is already running, pause it first for an unfiltered comparison. This demo uses a browser port of the app’s movement filter and the same movement settings. Browser timing, display scaling, and operating-system input handling can make the desktop app feel different. The desktop app also cancels residual movement on clicks; this comparison keeps it so clicking does not leave the cursors offset. It never hides, locks, or moves your real cursor. Nothing you do here is saved or uploaded. Use a mouse, trackpad, or pen; touch scrolling stays normal.</p>
+    <p class="demo-limits">If Stable Mouse is already running, pause it first for an unfiltered comparison. This demo uses the app’s development filter with more tolerant center recognition than the 0.1.2 download. Averaging uneven swings can add delay when you reach while shaking. Browser timing, display scaling, and operating-system input handling can also make the desktop app feel different. The desktop app cancels residual movement on clicks; this comparison keeps it so clicking does not leave the cursors offset. It never hides, locks, or moves your real cursor. Nothing you do here is saved or uploaded. Use a mouse, trackpad, or pen; touch scrolling stays normal.</p>
   </section>
   <section class="preview-note wrap" aria-labelledby="preview-title"><div><span class="pill">DEVELOPMENT PREVIEW</span><h2 id="preview-title">Helpful is something we have to test.</h2></div><div><p>This is an early version. Controlled tests show better target holding during regular shaking, but it still adds lag and can struggle with irregular movement. It has not been clinically validated.</p><p>Windows has been tested on a workstation with generated input. macOS and Linux builds pass automated checks; physical input testing on those platforms is still pending.</p><a class="text-link" href="https://github.com/Hunter-Boone/stable-mouse/blob/main/docs/center-tracking.md">Read the tests and limitations <span aria-hidden="true">↗</span></a></div></section>
   <section id="downloads" class="section downloads wrap" aria-labelledby="download-title">

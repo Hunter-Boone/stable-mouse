@@ -81,14 +81,24 @@ const comparison = await evaluate(`(() => {
   }));
   document.querySelector('[data-strength="85"]').click();
   const results = [];
-  for (const checked of [false, true]) {
+  for (const pattern of ['regular', 'uneven']) for (const checked of [false, true]) {
     pointer('pointerleave', 0);
     center.checked = checked; center.dispatchEvent(new Event('input'));
     pointer('pointerenter', 0);
     const positions = []; let recognized = false;
+    let seed = 937, time = 0, duration = .125, from = 0, to = 65;
+    const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
     for (let i = 0; i < 875; i++) {
       // Five seconds of 4Hz shaking, then two seconds motionless.
-      const x = i < 625 ? 65 * Math.sin(i * .008 * 2 * Math.PI * 4) : 0;
+      const t = i * .008;
+      while (t >= time + duration) {
+        time += duration; from = to;
+        to = -Math.sign(to) * 65 * (1 + .35 * (2 * random() - 1));
+        duration = .125 * (1 + .35 * (2 * random() - 1));
+      }
+      const wave = pattern === 'regular' ? 65 * Math.sin(t * 2 * Math.PI * 4)
+        : Math.round(from + (to - from) * (.5 - .5 * Math.cos(Math.PI * (t - time) / duration)));
+      const x = i < 625 ? wave : 0;
       pointer('pointermove', x);
       // A held click must not break recognition or lose movement.
       if (i === 400) pointer('pointerdown', x);
@@ -100,18 +110,20 @@ const comparison = await evaluate(`(() => {
     }
     const mean = positions.reduce((a, b) => a + b) / positions.length;
     const rms = Math.sqrt(positions.reduce((a, b) => a + (b - mean) ** 2, 0) / positions.length);
-    results.push({checked, rms, recognized, finalStatus: label.textContent,
+    results.push({pattern, checked, rms, recognized, finalStatus: label.textContent,
       finalX: new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform).m41});
   }
   return results;
 })()`);
 assert.ok(comparison[0].rms > 1, JSON.stringify(comparison));
 assert.ok(comparison[1].rms < comparison[0].rms * .4, JSON.stringify(comparison));
+assert.ok(comparison[3].rms < comparison[2].rms * .9, JSON.stringify(comparison));
+assert.equal(comparison[3].recognized, true);
 assert.equal(comparison[0].recognized, false);
 assert.equal(comparison[1].recognized, true);
-assert.equal(comparison[1].finalStatus, 'Waiting for regular shaking. Using ordinary smoothing.');
+assert.equal(comparison[1].finalStatus, 'Waiting for repeated reversals. Using ordinary smoothing.');
 for (const result of comparison) assert.ok(Math.abs(result.finalX - 200) <= 1, JSON.stringify(result));
-console.log('Regular-shake comparison and release to ordinary smoothing:', comparison);
+console.log('Regular/uneven-shake comparison and release to ordinary smoothing:', comparison);
 assert.deepEqual(errors,[]);
 console.log('PASS: smoothing/settling, click/drag alignment, re-entry, presets, center toggle, pause, reset, Escape, keyboard slider, responsive layout; no JS exceptions.');
 ws.close();
