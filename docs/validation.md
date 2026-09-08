@@ -4,7 +4,16 @@ The automated suite checks synthetic motion attenuation, displacement conservati
 
 Tests with a fake backend verify UI behavior only. They do not validate OS mouse interception.
 
-## Local results, September 8, 2026
+## Version 0.1.1 results, September 8, 2026
+
+- Removed the magnitude-dependent speedup that weakened filtering during large shakes. The filter now uses two smoothing stages with an amplitude-independent response.
+- In the portable 4 Hz test with 300-unit amplitude and Strong smoothing, output/input RMS fell from 0.683 in 0.1.0 to 0.0513. Regression tests cover amplitude independence, slower shaking, sampling rates, settling, and preservation of deliberate travel distance.
+- [The 0.1.1 workflow](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34247603107) passed builds, tests, and packaged launches on all three platforms at revision `4e204ea95b0144e054184326208495df01bca185`.
+- On a Windows workstation with three monitors, three hands-off native replay runs passed. A 4 Hz, 150-pixel-amplitude input on the primary monitor produced RMS ratios of 0.05037, 0.05214, and 0.05018 with Strong smoothing. Peak displacement was 9 pixels in each run. Hook restart and the emergency pause shortcut also passed.
+- The first workstation replay had a large offset. It did not recur in the three coordinated hands-off runs. Do not use that first run as an attenuation measurement.
+- Replay uses tagged synthetic motion accepted only by the dedicated test build, and exercises the native hook, filter, and cursor output. Production builds continue to ignore injected movement. This validates controlled input/output behavior, not clinical benefit or subjective comfort with physical hand movement.
+
+## Version 0.1.0 results, September 8, 2026
 
 - Debian 12 x86_64, GCC 12.2, Qt 6.4.2: application and input helper built successfully.
 - All three CTest entries passed: filter, app controls/persistence/practice, and application smoke launch.
