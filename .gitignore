@@ -1,0 +1,6 @@
+/build*/
+/_CPack_Packages/
+/decisions.tsv
+/artifacts/
+*.user
+.DS_Store

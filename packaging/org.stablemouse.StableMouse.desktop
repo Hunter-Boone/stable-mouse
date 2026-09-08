@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Stable Mouse
+Comment=Adjustable mouse stabilization
+Exec=stable-mouse
+Icon=stable-mouse
+Terminal=false
+Categories=Utility;Accessibility;
+StartupWMClass=stable-mouse
