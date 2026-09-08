@@ -1,13 +1,19 @@
 # Website
 
 The site is plain HTML, CSS, and first-party JavaScript modules with no external
-fonts, analytics, build step, or runtime dependencies. GitHub Pages deploys it using
+fonts, analytics, or external runtime dependencies. GitHub Pages deploys it using
 `.github/workflows/pages.yml`. The default address is
 https://hunter-boone.github.io/stable-mouse/ and requires no purchased domain.
 Installers stay in GitHub Releases instead of the website repository directory.
 
-To preview locally, run `python3 -m http.server 8080 --directory website` and visit
-http://localhost:8080. Check both desktop and narrow layouts, keyboard navigation,
+Build the deployment and preview it locally:
+
+```sh
+node website/build.mjs /tmp/stable-mouse-site
+python3 -m http.server 8080 --directory /tmp/stable-mouse-site
+```
+
+Visit http://localhost:8080. Check both desktop and narrow layouts, keyboard navigation,
 FAQ expansion, and download links before publishing changes. Native details/summary
 controls work without JavaScript. Interactive links have generous target sizes.
 
@@ -72,3 +78,21 @@ ordinary smoothing, 3.83px for the detector, and 6.63px for always-centering. A 
 or a claim that always-centering is better. Longer windows can help slower shaking
 but add delay. The browser tests also verify actual control, click/drag, pause,
 and reset behavior in this mode.
+
+
+## Deployment and startup
+
+`build.mjs` gives every module and stylesheet a filename derived from its contents.
+It rewrites transitive imports before hashing their parents, so a dependency change
+also changes the entry URL. The deployed HTML always points at the corresponding
+scripts. CI tests this built output, and deploy builds the same output again.
+Directly serving `website/` still works for development, but do not deploy it.
+
+This fixes a reproduced mixed-version failure: after removing the speed control,
+a cached previous `demo.mjs` accessed that missing element and threw before
+initialization finished. `boot.mjs` also catches dependency-loading and startup
+failures and provides a reload link that requests a fresh page. Only the noscript
+message says JavaScript is needed. `tests/web/check-startup.mjs` intercepts the old
+unversioned script URL and verifies it is never requested, deliberately blocks a
+versioned dependency, then follows the recovery link and checks the controls work.
+Run that script against the built preview with Chrome's debugging port 9227 open.

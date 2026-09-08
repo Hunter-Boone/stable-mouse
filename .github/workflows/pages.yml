@@ -30,7 +30,8 @@ jobs:
           node tests/web/check-always-center.mjs
       - name: Check browser interaction and layouts
         run: |
-          python3 -m http.server 8086 --bind 127.0.0.1 --directory website > /tmp/site.log 2>&1 &
+          node website/build.mjs /tmp/stable-mouse-site
+          python3 -m http.server 8086 --bind 127.0.0.1 --directory /tmp/stable-mouse-site > /tmp/site.log 2>&1 &
           site_pid=$!
           google-chrome --headless --no-sandbox --disable-gpu --remote-debugging-port=9227 --user-data-dir=/tmp/demo-check about:blank > /tmp/chrome.log 2>&1 &
           chrome_pid=$!
@@ -40,6 +41,7 @@ jobs:
             sleep 1
           done
           node tests/web/check-browser.mjs http://127.0.0.1:8086/
+          node tests/web/check-startup.mjs http://127.0.0.1:8086/
   deploy:
     needs: check
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -49,10 +51,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build website with versioned assets
+        run: node website/build.mjs /tmp/stable-mouse-site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: website
+          path: /tmp/stable-mouse-site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

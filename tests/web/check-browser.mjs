@@ -12,7 +12,7 @@ const evaluate=async expression=>{const result=await send('Runtime.evaluate',{ex
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 await send('Runtime.enable');
 await send('Page.enable');
-if(process.argv[2]){await send('Page.navigate',{url:process.argv[2]});await wait(2000)}
+if(process.argv[2]){errors.length=0;await send('Page.navigate',{url:process.argv[2]});await wait(2000)}
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 await evaluate("document.querySelector('#try-it').scrollIntoView({behavior:'instant'})");
 assert.equal(await evaluate("document.querySelector('.demo-controls').disabled"),false);
