@@ -39,11 +39,12 @@ await evaluate("document.querySelector('#demo-toggle').click();document.querySel
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
 await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',windowsVirtualKeyCode:27});
 assert.equal(await evaluate("document.querySelector('#demo-toggle').getAttribute('aria-pressed')"),'false');
-// Slider keyboard operation is native, with live label updates.
-await evaluate("document.querySelector('#demo-speed').focus()");
+// Demo speed is fixed; the smoothing slider still supports keyboard operation.
+assert.equal(await evaluate("document.querySelector('#demo-speed')"),null);
+await evaluate("document.querySelector('#demo-strength').focus()");
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
 await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
-assert.equal(await evaluate("document.querySelector('#demo-speed-value').textContent"),'101%');
+assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'86%');
 for(const width of [1440,390,320]){
  await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
  const check=await evaluate("({width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth,minButton:Math.min(...[...document.querySelectorAll('.demo-controls button')].map(a=>a.getBoundingClientRect().height))})");

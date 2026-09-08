@@ -6,7 +6,6 @@ const area = section.querySelector('.demo-area');
 const ghost = section.querySelector('.demo-cursor');
 const mark = section.querySelector('.demo-click');
 const strength = section.querySelector('#demo-strength');
-const speed = section.querySelector('#demo-speed');
 const center = section.querySelector('#demo-center');
 const method = section.querySelector('#demo-center-method');
 const centerWindow = section.querySelector('#demo-center-window');
@@ -89,10 +88,9 @@ function configure() {
     filter = nextMode === 'always' ? new AlwaysCenter() : new Stabilizer();
     mode = nextMode;
   }
-  filter.configure({ strength: Number(strength.value), speed: Number(speed.value) / 100, centerTracking: center.checked,
+  filter.configure({ strength: Number(strength.value), speed: 1, centerTracking: center.checked,
     windowSeconds: Number(centerWindow.value) / 1000 });
   section.querySelector('#demo-strength-value').textContent = `${strength.value}%`;
-  section.querySelector('#demo-speed-value').textContent = `${speed.value}%`;
   status.textContent = enabled ? 'Demo smoothing is on' : 'Paused · Both cursors move together';
   toggle.textContent = enabled ? 'Pause smoothing' : 'Enable smoothing';
   toggle.setAttribute('aria-pressed', String(enabled));
@@ -114,7 +112,7 @@ area.addEventListener('pointerdown', event => {
   // the desktop app's click-tail cancellation policy.
   mark.style.transform = `translate(${output.x}px, ${output.y}px)`; mark.hidden = false;
 });
-for (const control of [strength, speed, center]) control.addEventListener('input', configure);
+for (const control of [strength, center]) control.addEventListener('input', configure);
 method.addEventListener('change', () => { center.checked = true; configure(); });
 centerWindow.addEventListener('input', () => { leave(); configure(); });
 section.querySelectorAll('[data-strength]').forEach(button => button.addEventListener('click', () => {

@@ -12,10 +12,12 @@ FAQ expansion, and download links before publishing changes. Native details/summ
 controls work without JavaScript. Interactive links have generous target sizes.
 
 The practice area draws a second cursor and leaves the system cursor untouched.
-Its presets, strength, speed, center tracking, and pause controls use a JavaScript
+Its presets, strength, center tracking, and pause controls use a JavaScript
 port of the app filter. Clicking marks the simulated click position without
 discarding queued motion. Unlike the desktop app's click-tail cancellation, this
-keeps the comparison aligned after a click or drag at 100% speed away from edges.
+keeps the comparison aligned after a click or drag away from edges. The browser
+comparison fixes pointer speed at 100% so both cursors use the same movement
+scale. Speed remains adjustable in the desktop app.
 The center tracking indicator reports recognition on each axis, or fallback to
 ordinary smoothing. It does not measure tremor severity.
 Leaving the area resets the comparison. Touch input keeps normal

@@ -50,7 +50,7 @@
   <section id="how" class="section wrap" aria-labelledby="how-title">
     <div class="section-heading"><p class="eyebrow">YOUR MOUSE. YOUR PACE.</p><h2 id="how-title">A little steadier,<br>on your terms.</h2><p>Stable Mouse works with the desktop pointer you already use. Start paused, try a setting, and change it whenever you need.</p></div>
     <div class="features">
-      <article><span class="feature-number">01 / ADJUST</span><h3>Find your balance</h3><p>Choose Light, Balanced, or Strong smoothing. Adjust pointer speed separately. More smoothing reduces shaking but adds delay.</p></article>
+      <article><span class="feature-number">01 / ADJUST</span><h3>Find your balance</h3><p>Choose Light, Balanced, or Strong smoothing. The desktop app also lets you adjust pointer speed. More smoothing reduces shaking but adds delay.</p></article>
       <article><span class="feature-number">02 / HOLD</span><h3>Help with small targets</h3><p>Optional center tracking looks for the middle of repeated back-and-forth shaking. It can help hold a target, but needs several reversals to recognize a pattern.</p></article>
       <article><span class="feature-number">03 / PAUSE</span><h3>Stay in charge</h3><p>Enable or pause from the app or tray. Use the emergency shortcut when you need to. Starting at login and enabling at launch are separate choices.</p></article>
       <article><span class="feature-number">04 / PRACTICE</span><h3>Try it at your own pace</h3><p>Use the built-in practice area to compare settings. No scores, saved movement history, or medical measurements.</p></article>
@@ -67,8 +67,6 @@
         <div class="demo-presets" role="group" aria-label="Smoothing presets"><button type="button" data-strength="25">Light</button><button type="button" data-strength="55">Balanced</button><button type="button" data-strength="85">Strong</button></div>
         <label for="demo-strength">Smoothing strength <output id="demo-strength-value" for="demo-strength">55%</output></label>
         <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
-        <label for="demo-speed">Pointer speed <output id="demo-speed-value" for="demo-speed">100%</output></label>
-        <input id="demo-speed" type="range" min="25" max="200" value="100" step="1">
         <label class="demo-check" for="demo-center"><input id="demo-center" type="checkbox">Track the center of movement <span class="small">Preview</span></label>
         <label for="demo-center-method">Center method</label>
         <select id="demo-center-method" aria-describedby="demo-center-help">
@@ -92,7 +90,7 @@
           <div class="demo-click" hidden aria-hidden="true"></div>
           <svg class="demo-cursor" hidden aria-hidden="true" width="28" height="36" viewBox="0 0 28 36"><path d="M1 1v27l7-7 7 13 7-4-7-13 11-1z" fill="#185e53" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
         </div>
-        <p id="demo-instructions" class="small">Try holding the teal pointer over a target. Click to mark its position; clicking and dragging keep movement continuous. At 100% pointer speed, the cursors settle together after you stop, unless the teal cursor has reached an edge. Move out and back in to align them again. Escape pauses the demo while this section has focus.</p>
+        <p id="demo-instructions" class="small">Try holding the teal pointer over a target. Click to mark its position; clicking and dragging keep movement continuous. Both cursors use the same movement scale and settle together after you stop, unless the teal cursor has reached an edge. Move out and back in to align them again. Escape pauses the demo while this section has focus.</p>
       </div>
     </div>
     <p class="demo-limits">If Stable Mouse is already running, pause it first for an unfiltered comparison. This demo uses the app’s development filter with more tolerant center recognition than the 0.1.2 download. Averaging uneven swings can add delay when you reach while shaking. Browser timing, display scaling, and operating-system input handling can also make the desktop app feel different. The desktop app cancels residual movement on clicks; this comparison keeps it so clicking does not leave the cursors offset. It never hides, locks, or moves your real cursor. Nothing you do here is saved or uploaded. Use a mouse, trackpad, or pen; touch scrolling stays normal.</p>
