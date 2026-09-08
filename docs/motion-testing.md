@@ -68,3 +68,12 @@ dropped drags and whether control feels tiring, delayed or easier. Do not requir
 medical details or save raw pointer traces. Ask which setting they prefer; a
 smoother-looking pointer can still make a task harder. Physical device, button,
 monitor-edge and pause checks are also listed in [validation.md](validation.md).
+
+Generate an offline interactive report with:
+
+```sh
+python3 tests/render_motion_report.py motion-traces.csv motion-report.html --label "Portable simulation"
+```
+
+Use a Windows trace and an explicit Windows label to visualize native results.
+The report runs locally in a browser and makes no network requests.

@@ -21,13 +21,13 @@ int main(int argc, char **argv) {
             filter.add(input.raw.x-previous.x, input.raw.y-previous.y); previous = input.raw;
             const auto delta = filter.pixels(.008); output.x += delta.x; output.y += delta.y;
             m.add(t, input, output);
+            if (strength == 0) ok &= output.x == input.raw.x && output.y == input.raw.y;
             if (trace) trace << s.name << ',' << strength << ',' << t << ',' << input.raw.x << ',' << input.raw.y << ',' << input.intended.x << ',' << input.intended.y << ',' << output.x << ',' << output.y << '\n';
         }
         std::cout << s.name << ',' << strength << ',' << m.rawRms() << ',' << m.errorRms() << ',' << (s.kind == 2 && s.amplitude == 0 ? -1 : m.ratio()) << ',' << m.peak << ',' << m.dwell() << '\n';
         // Compare to bounds only at the specified Strong setting. The noiseless
         // reach deliberately measures the cost of smoothing; it is not attenuation.
         if (strength == 85) ok &= m.count > 400 && (s.amplitude || s.kind == 1 ? m.ratio() < s.maxErrorRatio : m.errorRms() < 70);
-        if (strength == 0) ok &= m.errorRms() == m.rawRms();
     }
     return ok ? 0 : 1;
 }
