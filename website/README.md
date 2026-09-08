@@ -51,6 +51,9 @@ The browser fixes speed at 100% and marks clicks without cancelling movement.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 
+Version 0.1.4 adds larger desktop controls and in-app updates. Its download links
+and update instructions are on the website; the demo filter is unchanged.
+
 When publishing a new application release, update the version, asset links and
 release-note link in index.html together. Keep platform requirements and preview
 limitations accurate. Do not present generated cursor tests as clinical results.
@@ -59,8 +62,9 @@ limitations accurate. Do not present generated cursor tests as clinical results.
 ## Always-center experiment
 
 Choose **Always follow the center** under **How to steady movement**. Choose
-**Smoothing only** or **Recognize shaking** to compare. Fine tuning is under
-**More options**, which starts closed.
+**Smoothing only** or **Recognize shaking** to compare. Fine tuning is visible
+below the smoothing presets; the center window appears when Always follow the
+center is selected.
 
 `always-center.mjs` takes the midpoint of the minimum and maximum recent positions
 on each axis and passes changes in that midpoint through the app's ordinary
