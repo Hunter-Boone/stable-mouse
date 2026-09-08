@@ -31,14 +31,7 @@ bool replayShake(Backend &backend) {
         if (t >= 4) { loop.quit(); return; }
         const int raw = int(std::llround(150 * std::sin(2 * std::acos(-1.) * 4 * t)));
         const int delta = raw - previous; previous = raw;
-        const int left = GetSystemMetrics(SM_XVIRTUALSCREEN), top = GetSystemMetrics(SM_YVIRTUALSCREEN);
-        const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN), height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-        INPUT event{}; event.type = INPUT_MOUSE;
-        event.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
-        event.mi.dx = LONG((actual.x + delta - left + .5) * 65536. / width);
-        event.mi.dy = LONG((actual.y - top + .5) * 65536. / height);
-        event.mi.dwExtraInfo = 0x53544D54;
-        if (SendInput(1, &event, sizeof(event)) != 1) { injectionOk = false; loop.quit(); }
+        if (!backend.replayMotion(delta, 0)) { injectionOk = false; loop.quit(); }
     });
     elapsed.start(); timer.start(); loop.exec(); timer.stop();
     const double ratio = count ? std::sqrt(squared / count) / (150 / std::sqrt(2.)) : 1;

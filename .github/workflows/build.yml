@@ -75,7 +75,9 @@ jobs:
         if: always() && runner.os == 'Windows'
         with:
           name: stable-mouse-Windows-test-tools
-          path: build/Release/windows_backend_tests.exe
+          path: |
+            build/Release/windows_backend_tests.exe
+            build/Testing/Temporary/LastTest.log
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:

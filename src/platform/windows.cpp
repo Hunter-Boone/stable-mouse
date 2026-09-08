@@ -19,6 +19,11 @@ public:
     }
     QString escapeHint() const override { return "Press Ctrl + Alt + F8 anywhere to pause."; }
     void configure(FilterConfig c) override { strength.store(c.strength); speed.store(c.speed); }
+#ifdef STABLE_MOUSE_TEST_REPLAY
+    bool replayMotion(int x, int y) override {
+        return PostThreadMessageW(threadId.load(), WM_APP + 1, WPARAM(x), LPARAM(y)) != 0;
+    }
+#endif
     bool start(const QString &) override {
         if (active()) return true;
         stop();
@@ -47,6 +52,24 @@ public:
             auto last = std::chrono::steady_clock::now();
             ready.set_value({});
             while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
+#ifdef STABLE_MOUSE_TEST_REPLAY
+                if (msg.message == WM_APP + 1) {
+                    // Read and inject on the input thread. Computing an absolute
+                    // replay target on the UI thread races the output timer and
+                    // accidentally adds cursor drift to the synthetic input.
+                    POINT p{};
+                    if (GetCursorPos(&p)) {
+                        const int left = GetSystemMetrics(SM_XVIRTUALSCREEN), top = GetSystemMetrics(SM_YVIRTUALSCREEN);
+                        const int width = GetSystemMetrics(SM_CXVIRTUALSCREEN), height = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+                        INPUT input{}; input.type = INPUT_MOUSE;
+                        input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK;
+                        input.mi.dx = LONG((p.x + int(msg.wParam) - left + .5) * 65536. / width);
+                        input.mi.dy = LONG((p.y + int(msg.lParam) - top + .5) * 65536. / height);
+                        input.mi.dwExtraInfo = 0x53544D54;
+                        SendInput(1, &input, sizeof(input));
+                    }
+                }
+#endif
                 if (msg.message == WM_HOTKEY) {
                     QMetaObject::invokeMethod(this, [this] { stop(); emit emergencyPause(); }, Qt::QueuedConnection);
                     break;
