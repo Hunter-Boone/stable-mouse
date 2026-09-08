@@ -16,6 +16,16 @@ if(process.argv[2]){errors.length=0;await send('Page.navigate',{url:process.argv
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
 await evaluate("document.querySelector('#try-it').scrollIntoView({behavior:'instant'})");
 assert.equal(await evaluate("document.querySelector('.demo-controls').disabled"),false);
+assert.equal(await evaluate("document.querySelector('.hero').nextElementSibling.id"),'try-it');
+assert.equal(await evaluate("/[↗↓]/u.test(document.querySelector('.hero .actions').textContent)"),false);
+const fill = await evaluate(`(() => {
+  const controls=document.querySelector('.demo-controls').getBoundingClientRect();
+  const workspace=document.querySelector('.demo-workspace').getBoundingClientRect();
+  const area=document.querySelector('.demo-area').getBoundingClientRect();
+  return {gap:Math.abs(controls.bottom-workspace.bottom),height:area.height};
+})()`);
+assert.ok(fill.gap < 2 && fill.height > 480, JSON.stringify(fill));
+
 const rect=await evaluate("(()=>{const r=document.querySelector('.demo-area').getBoundingClientRect();return {x:r.x,y:r.y,width:r.width,height:r.height}})()");
 const mouse=async(x,y,type='mouseMoved')=>send('Input.dispatchMouseEvent',{type,x:rect.x+x,y:rect.y+y,...(type==='mouseMoved'?{}:{button:'left',clickCount:1})});
 const state=()=>evaluate("(()=>{const g=document.querySelector('.demo-cursor');const t=new DOMMatrix(getComputedStyle(g).transform);return {hidden:g.hasAttribute('hidden'),x:t.m41,y:t.m42,locked:!!document.pointerLockElement,cursor:getComputedStyle(document.querySelector('.demo-area')).cursor,mark:!document.querySelector('.demo-click').hidden}})()");

@@ -758,7 +758,7 @@ footer>div a {
   .demo-area { height: 330px; }
 }
 
-/* Keep the first view short; fine tuning is available on request. */
+/* Demo controls and optional preview notes. */
 .demo-controls { align-self: start; }
 .demo-controls #demo-center-help { font-size: 16px; line-height: 1.6; margin: 12px 0 20px; }
 .demo-more, .demo-notes { border-top: 1px solid var(--line); }
@@ -784,3 +784,10 @@ footer>div a {
 .demo-setting { min-width: 0; margin: 20px 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
 .demo-setting legend { font-size: 16px; }
 .demo-setting p { font-size: 15px; }
+
+/* Fill the desktop demo alongside its controls without a fixed-height gap. */
+.demo-workspace { display: flex; flex-direction: column; align-self: stretch; }
+.demo-area { flex: 1 0 480px; height: auto; min-height: 480px; }
+@media (max-width: 900px) {
+  .demo-area { flex: none; height: clamp(330px, 55vh, 520px); min-height: 330px; }
+}
