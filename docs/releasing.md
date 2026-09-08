@@ -20,13 +20,15 @@ Platform references:
 
 ## In-app updates
 
-Set the full version when configuring a release build, for example
-`-DSTABLE_MOUSE_RELEASE_VERSION=0.1.4-preview.2`, and publish it with the tag
-`v0.1.4-preview.2`. The default is the CMake project version with `-preview.1`.
-The build workflow's optional `release_version` input sets the same value.
-For a stable release, explicitly set `-DSTABLE_MOUSE_RELEASE_VERSION=0.1.4`.
-Keep the three numeric components aligned with `project(VERSION ...)`.
-Increment the full version for every release, including preview revisions.
+Use the CMake project version as the release number, for example `0.1.4`,
+and publish the GitHub tag `v0.1.4`. Bump `project(VERSION ...)` for each release.
+Keep development-preview status in the release notes and website copy; regular
+releases use plain version numbers and are not marked as GitHub prereleases.
+The updater can therefore offer the next regular release to installed users.
+
+The optional `STABLE_MOUSE_RELEASE_VERSION` CMake setting and the build workflow's
+`release_version` input allow an explicit version override. Leave them empty for
+normal releases. The numeric components must match the CMake project version.
 
 The updater reads the 100 most recent published GitHub releases and compares
 semantic versions. Preview builds accept previews and stable releases; stable

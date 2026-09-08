@@ -93,7 +93,8 @@ private slots:
     }
     void platformSelection() {
         QCOMPARE(Updates::platformSuffix("windows", "10", "x86_64"), "Windows-x64.exe");
-        QCOMPARE(Updates::platformSuffix("osx", "14", "arm64"), "macOS-universal.dmg");
+        QCOMPARE(Updates::platformSuffix("macos", "14", "arm64"), "macOS-universal.dmg");
+        QCOMPARE(Updates::platformSuffix("macos", "14", "x86_64"), "macOS-universal.dmg");
         QCOMPARE(Updates::platformSuffix("debian", "12.8", "x86_64"), "Debian12-amd64.deb");
         QCOMPARE(Updates::platformSuffix("ubuntu", "24.04", "x86_64"), "Ubuntu24.04-amd64.deb");
         QVERIFY(Updates::platformSuffix("ubuntu", "22.04", "x86_64").isEmpty());
@@ -227,7 +228,7 @@ private slots:
     }
     void livePublishedRelease() {
         if (!qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_LIVE_UPDATER")) QSKIP("Opt-in read-only GitHub integration check");
-        if (suffix().isEmpty()) QSKIP("No packaged updater target on this test host");
+        QVERIFY2(!suffix().isEmpty(), qPrintable("No packaged updater target for " + QSysInfo::productType() + "/" + QSysInfo::buildCpuArchitecture()));
         Updater updater;
         updater.check(); QTRY_COMPARE_WITH_TIMEOUT(updater.state(), Updater::State::Available, 45000);
         QVERIFY(!updater.release().download.isEmpty());

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: 'Full release version matching the tag without v; empty uses the project preview version'
+        description: 'Full release version matching the tag without v; empty uses the project version'
         type: string
         required: false
         default: ''
@@ -52,16 +52,10 @@ jobs:
         run: |
           & build/Release/stable-mouse.exe --screenshot "$env:RUNNER_TEMP/stable-mouse-interface.png"
       - name: Verify updater against published installers
-        shell: bash
         env:
           QT_QPA_PLATFORM: offscreen
           STABLE_MOUSE_TEST_LIVE_UPDATER: '1'
-        run: |
-          if [ "$RUNNER_OS" = Windows ]; then
-            build/Release/updater_tests.exe livePublishedRelease
-          else
-            build/updater_tests livePublishedRelease
-          fi
+        run: ctest --test-dir build -C Release -R '^updater_live$' --verbose --output-on-failure
       - name: Package
         working-directory: build
         run: cpack -C Release

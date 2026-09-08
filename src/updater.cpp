@@ -56,7 +56,7 @@ bool Updates::newer(const QString &candidate, const QString &installed) {
 }
 QString Updates::platformSuffix(const QString &os, const QString &osVersion, const QString &architecture) {
     if (os == "windows" && architecture == "x86_64") return "Windows-x64.exe";
-    if (os == "osx" && (architecture == "x86_64" || architecture == "arm64")) return "macOS-universal.dmg";
+    if (os == "macos" && (architecture == "x86_64" || architecture == "arm64")) return "macOS-universal.dmg";
     if (architecture == "x86_64") {
         if (os == "debian" && osVersion.section('.', 0, 0) == "12") return "Debian12-amd64.deb";
         if (os == "ubuntu" && osVersion == "24.04") return "Ubuntu24.04-amd64.deb";

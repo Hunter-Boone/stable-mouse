@@ -39,7 +39,11 @@ int main(int argc, char **argv) {
     QObject::connect(&server, &QLocalServer::newConnection, &window, [&] {
         while (auto *socket = server.nextPendingConnection()) { window.reveal(); socket->disconnectFromServer(); socket->deleteLater(); }
     });
-    if (smoke) QTimer::singleShot(150, &app, [&] { std::cout << "Stable Mouse window opened without activating input.\n"; app.quit(); });
+    if (smoke) QTimer::singleShot(150, &app, [&] {
+        std::cout << "Stable Mouse " << QCoreApplication::applicationVersion().toStdString()
+                  << " window opened without activating input.\n";
+        app.quit();
+    });
     if (screenshotIndex >= 0) QTimer::singleShot(300, &app, [&] {
         const auto path = app.arguments().value(screenshotIndex + 1);
         const bool saved = !path.isEmpty() && window.grab().save(path);
