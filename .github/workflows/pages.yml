@@ -2,7 +2,9 @@ name: Publish website
 on:
   push:
     branches: [main]
-    paths: ['website/**', '.github/workflows/pages.yml']
+    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'tests/web/**', '.github/workflows/pages.yml']
+  pull_request:
+    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'tests/web/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,7 +14,32 @@ concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compare browser filter with native app
+        run: |
+          g++ -std=c++17 -Isrc tests/web/filter_reference.cpp -o /tmp/filter-reference
+          node tests/web/check-parity.mjs /tmp/filter-reference
+      - name: Check browser interaction and layouts
+        run: |
+          python3 -m http.server 8086 --bind 127.0.0.1 --directory website > /tmp/site.log 2>&1 &
+          site_pid=$!
+          google-chrome --headless --no-sandbox --disable-gpu --remote-debugging-port=9227 --user-data-dir=/tmp/demo-check about:blank > /tmp/chrome.log 2>&1 &
+          chrome_pid=$!
+          trap 'kill "$site_pid" "$chrome_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:9227/json > /dev/null && curl -fsS http://127.0.0.1:8086/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/web/check-browser.mjs http://127.0.0.1:8086/
   deploy:
+    needs: check
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

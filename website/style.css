@@ -704,3 +704,52 @@ footer>div a {
     color:ButtonText
   }
 }
+
+/* Local cursor comparison. No cursor hiding, pointer lock, or touch capture. */
+.demo-section { border-top: 1px solid var(--line); }
+.demo-heading { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: end; margin-bottom: 28px; }
+.demo-heading p:last-child { color: var(--muted); }
+.demo-heading h2 { margin-bottom: 10px; }
+.demo-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; }
+.demo-controls { margin: 0; padding: 24px; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--white); }
+.demo-controls legend { padding-inline: 8px; font-size: 15px; font-weight: 650; }
+.demo-controls .button { width: 100%; justify-content: center; font-family: inherit; cursor: pointer; }
+.demo-controls label:not(.demo-check) { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-top: 16px; }
+.demo-controls output { color: var(--green); }
+.demo-controls input[type=range] { width: 100%; height: 48px; margin: 0; accent-color: var(--green); cursor: pointer; }
+.demo-presets { display: flex; gap: 8px; }
+.demo-presets button { flex: 1; min-height: 48px; border: 1px solid #94aa99; border-radius: 5px; background: transparent; color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px; }
+.demo-presets button:hover { background: var(--sage); }
+.demo-controls button:focus-visible, .demo-controls input:focus-visible, .demo-area:focus-visible { outline: 3px solid #a74d22; outline-offset: 3px; }
+.demo-controls #demo-status { margin: 10px 0 18px; min-height: 22px; }
+.demo-check { display: block; font-size: 14px; min-height: 60px; padding-block: 10px; cursor: pointer; }
+.demo-check input { width: 20px; height: 20px; vertical-align: middle; accent-color: var(--green); margin: 0 8px 0 0; }
+.demo-check span { margin-left: 28px; display: block; }
+.demo-workspace { min-width: 0; }
+.demo-area { position: relative; width: 100%; height: 480px; background-color: var(--sage); background-image: radial-gradient(#bdcfbf 1px, transparent 1px); background-size: 24px 24px; border-radius: 8px; overflow: hidden; user-select: none; }
+.demo-hint { position: absolute; top: 28px; left: 24px; right: 24px; text-align: center; font-size: 15px; color: var(--muted); pointer-events: none; }
+.demo-cursor { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; z-index: 3; filter: drop-shadow(0 1px 2px #213e3540); }
+.demo-cursor[hidden], .demo-click[hidden], .demo-hint[hidden], .demo-loading[hidden] { display: none; }
+.demo-target { position: absolute; top: 45%; border: 2px solid #81a392; border-radius: 50%; background: #faf9f3b0; pointer-events: none; }
+.target-large { width: 72px; height: 72px; left: calc(20% - 36px); }
+.target-medium { width: 44px; height: 44px; left: calc(50% - 22px); margin-top: 14px; }
+.target-small { width: 24px; height: 24px; left: calc(80% - 12px); margin-top: 24px; }
+.demo-target span { position: absolute; top: calc(100% + 18px); left: 50%; transform: translateX(-50%); color: var(--muted); font-size: 12px; }
+.demo-target.is-hit { border-color: var(--green); background: #97c6a3; }
+.demo-click { position: absolute; left: -8px; top: -8px; width: 16px; height: 16px; border: 2px solid #a4684d; border-radius: 50%; pointer-events: none; z-index: 2; }
+.demo-workspace > p { margin: 14px 0 0; }
+.demo-limits { font-size: 13px; color: var(--muted); margin: 24px 0 0; max-width: 1000px; }
+@media (max-width: 900px) {
+  .demo-heading { grid-template-columns: 1fr; gap: 12px; }
+  .demo-layout { grid-template-columns: 1fr; }
+  .demo-area { height: 360px; }
+  .demo-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; align-items: center; }
+  .demo-presets, .demo-check { grid-column: 1 / -1; }
+  .demo-controls label:not(.demo-check) { margin-top: 0; }
+}
+@media (max-width: 420px) {
+  .demo-controls { display: block; }
+  .demo-controls label:not(.demo-check) { margin-top: 16px; }
+  .demo-presets { margin-top: 12px; }
+  .demo-area { height: 330px; }
+}

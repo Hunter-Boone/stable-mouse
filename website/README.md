@@ -1,7 +1,7 @@
 # Website
 
-The site is plain HTML and CSS with no external fonts, scripts, analytics, build
-step, or runtime dependencies. GitHub Pages deploys this directory using
+The site is plain HTML, CSS, and first-party JavaScript modules with no external
+fonts, analytics, build step, or runtime dependencies. GitHub Pages deploys it using
 `.github/workflows/pages.yml`. The default address is
 https://hunter-boone.github.io/stable-mouse/ and requires no purchased domain.
 Installers stay in GitHub Releases instead of the website repository directory.
@@ -10,6 +10,27 @@ To preview locally, run `python3 -m http.server 8080 --directory website` and vi
 http://localhost:8080. Check both desktop and narrow layouts, keyboard navigation,
 FAQ expansion, and download links before publishing changes. Native details/summary
 controls work without JavaScript. Interactive links have generous target sizes.
+
+The practice area draws a second cursor and leaves the system cursor untouched.
+Its presets, strength, speed, center tracking, and pause controls use a JavaScript
+port of the app filter. Clicking clears residual movement and marks the simulated
+click position. Leaving the area resets the comparison. Touch input keeps normal
+page scrolling. No input history is saved or sent anywhere. Browser event timing,
+pixel scaling, and OS input processing can differ from the installed app.
+
+Keep `filter.mjs` aligned with `src/filter.h` and `src/center_tracker.h`. Pages CI
+compares both implementations before deployment, including when either C++ header
+changes. Run the same check locally:
+
+```sh
+g++ -std=c++17 -Isrc tests/web/filter_reference.cpp -o /tmp/filter-reference
+node tests/web/check-parity.mjs /tmp/filter-reference
+```
+
+The workflow also serves the real page to headless Chrome and checks pointer
+movement, click reset, controls, keyboard operation, and layouts down to 320px.
+To repeat with a local Chrome debugging session on port 9227 and the HTTP server
+above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 
 When publishing a new application release, update the version, asset links and
 release-note link in index.html together. Keep platform requirements and preview
