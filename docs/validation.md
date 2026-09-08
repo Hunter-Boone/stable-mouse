@@ -13,7 +13,9 @@ Tests with a fake backend verify UI behavior only. They do not validate OS mouse
 - Opened the actual app under Xvfb with the X11 Qt platform plugin. Tested single-instance handoff and restart after process termination with isolated settings.
 - Extracted the Debian package and launched its executable. Confirmed package directory permissions are 0755 after packaging outside the NAS workspace.
 - Physical Linux filtering is untested. This environment has no `uinput` device or available kernel module.
-- GitHub Actions built and passed all three CTest entries on Windows Server 2022, macOS 14, and Ubuntu 24.04. Native installer launch checks are being added; physical-device checks remain pending.
+- GitHub Actions built and passed the filter, app, and smoke CTest entries on Windows Server 2022, macOS 14, and Ubuntu 24.04. The workflow also checks packaged launches and, on Windows, real hook activation and emergency pause. Physical-device checks remain pending.
+
+The Windows native backend test is opt-in with `STABLE_MOUSE_TEST_NATIVE_INPUT=1`. It temporarily installs the actual hook and sends the emergency keyboard shortcut. Run it only on an isolated test desktop. CI enables it; ordinary local CTest runs skip it.
 
 ## Hardware release checklist
 
