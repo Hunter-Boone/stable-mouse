@@ -61,3 +61,48 @@ away. It should be optional, avoid text selection and dragging, reject stale or
 ambiguous targets, and never click automatically. Keyboard focus alone is not a
 sufficient reason to move the pointer. This is a design proposal, not an enabled
 feature or a tested claim about usefulness.
+
+
+## Verified 0.1.2 results, September 8, 2026
+
+[Build a977457](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34254193180)
+passed all Windows, macOS and Ubuntu jobs, including packaged launches. The macOS
+disk-image job passed on retry after a resource-busy error. The earlier Windows
+build exposed missing COM header declarations in the focus test, which were fixed.
+A Debian 12 package was also inspected and its extracted app launched locally.
+Physical macOS and Linux mouse interception remains untested in this environment.
+
+On a three-monitor Windows workstation, nine coordinated native scenarios and
+click/reset/drag/release, restart and emergency-pause checks passed at Strong 85%,
+speed 100%, center tracking enabled. Results during the final two seconds:
+
+| Generated case | Time within 12 pixels of the prescribed target |
+| --- | ---: |
+| 300-pixel span, 4 Hz | 100% |
+| 1,200-pixel span, 4 Hz | 77.2% |
+| 1,200-pixel span, 2 Hz | 100% |
+| 600-pixel span, 1 Hz | 100% |
+| Irregular movement on both axes | 35.3% |
+| Reach with increasing shaking | 100% |
+| Clean reach | 100% |
+| Shaking that stops | 100% |
+| Fine correction with ongoing shaking | 100% |
+
+The large 4 Hz case reduced RMS movement by 97.3% after warmup, but still had a
+40-pixel peak error during that measurement interval. Its prior ordinary-smoothing
+run had 27.0% final target dwell. Windows CI was steadier than this workstation
+run, with 100% final dwell and a four-pixel peak. The workstation replay input
+intervals were regular, with a median 8.06 ms and maximum 9.39 ms. The exact reason
+for the remaining native variation has not been established. Do not generalize
+the CI result to every mouse or machine.
+
+The test observed one press and one release and 99 pixels of a requested
+100-pixel drag. These events were confined to the test window. The focus test
+passed in Windows CI and confirmed that the focused button and the control at a
+candidate point can differ; no steering was added.
+
+The first manually extracted workstation preview omitted the installer’s plugins
+folder and failed to launch. Copying the complete runtime fixed it. The corrected
+copy passed a launch check and its actual window was inspected, paused with center
+tracking selected. The downloadable installer already contained that folder and
+had passed its installation-and-launch check.

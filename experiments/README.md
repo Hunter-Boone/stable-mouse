@@ -1,5 +1,9 @@
 # Reversal midpoint experiment
 
+The original reversal prototypes below remain offline experiments. Version 0.1.2
+adds a revised optional implementation described in [center tracking](../docs/center-tracking.md).
+The comparison program now also runs that implementation as `center_tracking_preview`.
+
 This code is an offline research prototype. It is not linked into Stable Mouse
 and is not included in the application installers. It keeps no user data.
 
@@ -17,7 +21,7 @@ c++ -O2 -std=c++17 -Isrc -Itests experiments/compare_reversals.cpp -o /tmp/compa
 python3 tests/render_motion_report.py /tmp/reversal-traces.csv /tmp/reversal-comparison.html --label "Experimental portable simulation"
 ```
 
-Four algorithms process the same 14 generated paths at 125 samples per second:
+The original comparison used four algorithms on 14 generated paths at 125 samples per second:
 
 - Current Strong smoothing, with its existing time constant.
 - Midpoint estimation after alternating reversals, with faster fallback smoothing.
@@ -68,7 +72,7 @@ only locks after more than two seconds. When the shake stopped, returning to the
 fallback caused a 26.4-pixel output step in eight milliseconds, versus 3.6 pixels
 with Current Strong. This mode transition needs work before live cursor use.
 
-## Decision
+## Original experiment decision
 
 Keep the released algorithm unchanged. Continue investigating a confidence-gated
 center estimate, but do not present this prototype as a working replacement.
