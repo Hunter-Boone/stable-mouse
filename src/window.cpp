@@ -70,7 +70,8 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         QGroupBox { background: #fffef9; border: 1px solid #d7ddd2; border-radius: 10px; margin-top: 12px; padding: 18px 12px 12px; }
         QGroupBox::title { subcontrol-origin: margin; left: 16px; color: #185e53; }
         QCheckBox { min-height: 44px; spacing: 12px; color: #213e35; border: 3px solid transparent; }
-        QCheckBox::indicator { width: 24px; height: 24px; }
+        QCheckBox::indicator { width: 24px; height: 24px; border: 2px solid #8ba598; border-radius: 4px; background: #fffef9; }
+        QCheckBox::indicator:checked { background: #185e53; border-color: #185e53; image: url(:/icons/check.xpm); }
         QSlider { min-height: 44px; background: transparent; }
         QSlider::groove:horizontal { height: 8px; background: #d7ddd2; border-radius: 4px; }
         QSlider::sub-page:horizontal { background: #185e53; border-radius: 4px; }
