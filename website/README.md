@@ -13,8 +13,12 @@ controls work without JavaScript. Interactive links have generous target sizes.
 
 The practice area draws a second cursor and leaves the system cursor untouched.
 Its presets, strength, speed, center tracking, and pause controls use a JavaScript
-port of the app filter. Clicking clears residual movement and marks the simulated
-click position. Leaving the area resets the comparison. Touch input keeps normal
+port of the app filter. Clicking marks the simulated click position without
+discarding queued motion. Unlike the desktop app's click-tail cancellation, this
+keeps the comparison aligned after a click or drag at 100% speed away from edges.
+The center tracking indicator reports recognition on each axis, or fallback to
+ordinary smoothing. It does not measure tremor severity.
+Leaving the area resets the comparison. Touch input keeps normal
 page scrolling. No input history is saved or sent anywhere. Browser event timing,
 pixel scaling, and OS input processing can differ from the installed app.
 
@@ -28,7 +32,11 @@ node tests/web/check-parity.mjs /tmp/filter-reference
 ```
 
 The workflow also serves the real page to headless Chrome and checks pointer
-movement, click reset, controls, keyboard operation, and layouts down to 320px.
+movement, click/drag alignment, controls, keyboard operation, and layouts down to
+320px. A controlled browser clock also replays identical regular shaking with
+center tracking on and off, verifies recognition, and checks that it returns to
+ordinary smoothing after movement stops. This is a generated input test, not a
+measurement of how well it handles a person's tremor.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 

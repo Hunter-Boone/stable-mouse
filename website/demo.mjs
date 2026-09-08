@@ -9,12 +9,22 @@ const speed = section.querySelector('#demo-speed');
 const center = section.querySelector('#demo-center');
 const toggle = section.querySelector('#demo-toggle');
 const status = section.querySelector('#demo-status');
+const centerStatus = section.querySelector('#demo-center-status');
 const hint = section.querySelector('.demo-hint');
 const targets = [...area.querySelectorAll('.demo-target')];
 const filter = new Stabilizer();
 let enabled = true, active = false, previous = null, output = null, timer = null, lastTime = 0;
 let width = 0, height = 0;
 const clamp = (v, max) => Math.max(0, Math.min(max, v));
+function showCenterStatus() {
+  const axes = [filter.centerX.locked && 'horizontal', filter.centerY.locked && 'vertical'].filter(Boolean);
+  const message = !center.checked ? 'Center tracking is off.'
+    : !enabled ? 'Center tracking is paused.'
+    : Number(strength.value) === 0 ? 'Increase smoothing strength to use center tracking.'
+    : axes.length ? `Tracking the ${axes.join(' and ')} center.`
+    : 'Waiting for regular shaking. Using ordinary smoothing.';
+  if (centerStatus.textContent !== message) centerStatus.textContent = message;
+}
 function paint() {
   if (!output) return;
   ghost.style.transform = `translate(${output.x}px, ${output.y}px)`;
@@ -33,12 +43,13 @@ function tick() {
     const delta = filter.pixels((now - lastTime) / 1000);
     output.x = clamp(output.x + delta.x, width - 1); output.y = clamp(output.y + delta.y, height - 1);
   }
-  lastTime = now; paint();
+  lastTime = now; paint(); showCenterStatus();
 }
 function leave() {
   active = false; previous = null; output = null; filter.reset();
   clearInterval(timer); timer = null; ghost.setAttribute('hidden', ''); hint.hidden = false;
   targets.forEach(target => target.classList.remove('is-hit'));
+  showCenterStatus();
 }
 function point(event) {
   const rect = area.getBoundingClientRect();
@@ -73,6 +84,7 @@ function configure() {
   status.textContent = enabled ? 'Demo smoothing is on' : 'Paused · Both cursors move together';
   toggle.textContent = enabled ? 'Pause smoothing' : 'Enable smoothing';
   toggle.setAttribute('aria-pressed', String(enabled));
+  showCenterStatus();
 }
 area.addEventListener('pointerenter', enter);
 area.addEventListener('pointermove', move);
@@ -80,7 +92,9 @@ area.addEventListener('pointerleave', leave);
 area.addEventListener('pointercancel', leave);
 area.addEventListener('pointerdown', event => {
   if (!active || event.pointerType === 'touch') return;
-  filter.reset(); // Same click-tail reset as the desktop app; never click for the user.
+  // Keep queued movement: discarding it permanently offsets a relative-motion
+  // comparison from the real cursor. This demo marks clicks without applying
+  // the desktop app's click-tail cancellation policy.
   mark.style.transform = `translate(${output.x}px, ${output.y}px)`; mark.hidden = false;
 });
 for (const control of [strength, speed, center]) control.addEventListener('input', configure);

@@ -23,7 +23,12 @@ await mouse(40,50);await mouse(300,100);await wait(20);
 let s=await state();assert.ok(!s.hidden && s.x<250 && s.x>=40,JSON.stringify(s));assert.equal(s.locked,false);assert.notEqual(s.cursor,'none');
 await wait(1100);s=await state();assert.ok(Math.abs(s.x-300)<=1 && Math.abs(s.y-100)<=1,JSON.stringify(s));
 await mouse(430,200);await mouse(430,200,'mousePressed');await mouse(430,200,'mouseReleased');
-const clicked=await state();assert.equal(clicked.mark,true);await wait(300);s=await state();assert.equal(s.x,clicked.x);assert.equal(s.y,clicked.y);
+const clicked=await state();assert.equal(clicked.mark,true);await wait(1100);s=await state();assert.ok(Math.abs(s.x-430)<=1 && Math.abs(s.y-200)<=1, `Click lost movement: ${JSON.stringify(s)}`);
+// Hold the button while moving, then release. Neither may discard displacement.
+await mouse(470,210,'mousePressed');
+await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rect.x+540,y:rect.y+260,button:'left',buttons:1});
+await mouse(540,260,'mouseReleased');await wait(1100);s=await state();
+assert.ok(Math.abs(s.x-540)<=1 && Math.abs(s.y-260)<=1, `Drag lost movement: ${JSON.stringify(s)}`);
 await mouse(-10,-10);assert.equal((await state()).hidden,true);await mouse(110,90);s=await state();assert.equal(s.x,110);assert.equal(s.y,90);
 await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('#demo-center').click()");
 assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('#demo-center').checked"),true);
@@ -48,6 +53,65 @@ await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceSc
 await evaluate("document.querySelector('#demo-toggle').click();document.querySelector('#try-it').scrollIntoView({behavior:'instant'})");
 await mouse(170,210);await mouse(350,245);await wait(50);
 fs.writeFileSync('/tmp/stable-mouse-demo-desktop.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
+// Feed identical samples through the actual DOM handlers and timer callback.
+// A controlled clock makes recognition tests independent of CI scheduling.
+const {identifier: clockScript} = await send('Page.addScriptToEvaluateOnNewDocument', {source: `
+  window.demoTestClock = {now: 0, tick: null};
+  performance.now = () => window.demoTestClock.now;
+  const originalInterval = window.setInterval, originalClear = window.clearInterval;
+  window.setInterval = (fn, ms, ...args) => {
+    if (ms === 8) { window.demoTestClock.tick = () => fn(...args); return -1; }
+    return originalInterval(fn, ms, ...args);
+  };
+  window.clearInterval = id => {
+    if (id === -1) window.demoTestClock.tick = null;
+    else originalClear(id);
+  };
+`});
+await send('Page.reload', {ignoreCache: true});await wait(1500);
+await send('Page.removeScriptToEvaluateOnNewDocument', {identifier: clockScript});
+const comparison = await evaluate(`(() => {
+  const area = document.querySelector('.demo-area');
+  const center = document.querySelector('#demo-center');
+  const label = document.querySelector('#demo-center-status');
+  const rect = area.getBoundingClientRect();
+  const pointer = (type, x) => area.dispatchEvent(new PointerEvent(type, {
+    pointerType: 'mouse', clientX: rect.left + 200 + x, clientY: rect.top + 100,
+    bubbles: true, button: 0, buttons: type === 'pointerup' ? 0 : 1
+  }));
+  document.querySelector('[data-strength="85"]').click();
+  const results = [];
+  for (const checked of [false, true]) {
+    pointer('pointerleave', 0);
+    center.checked = checked; center.dispatchEvent(new Event('input'));
+    pointer('pointerenter', 0);
+    const positions = []; let recognized = false;
+    for (let i = 0; i < 875; i++) {
+      // Five seconds of 4Hz shaking, then two seconds motionless.
+      const x = i < 625 ? 65 * Math.sin(i * .008 * 2 * Math.PI * 4) : 0;
+      pointer('pointermove', x);
+      // A held click must not break recognition or lose movement.
+      if (i === 400) pointer('pointerdown', x);
+      if (i === 600) pointer('pointerup', x);
+      window.demoTestClock.now += 8; window.demoTestClock.tick();
+      const position = new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform).m41;
+      if (i >= 375 && i < 625) positions.push(position);
+      recognized ||= label.textContent === 'Tracking the horizontal center.';
+    }
+    const mean = positions.reduce((a, b) => a + b) / positions.length;
+    const rms = Math.sqrt(positions.reduce((a, b) => a + (b - mean) ** 2, 0) / positions.length);
+    results.push({checked, rms, recognized, finalStatus: label.textContent,
+      finalX: new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform).m41});
+  }
+  return results;
+})()`);
+assert.ok(comparison[0].rms > 1, JSON.stringify(comparison));
+assert.ok(comparison[1].rms < comparison[0].rms * .4, JSON.stringify(comparison));
+assert.equal(comparison[0].recognized, false);
+assert.equal(comparison[1].recognized, true);
+assert.equal(comparison[1].finalStatus, 'Waiting for regular shaking. Using ordinary smoothing.');
+for (const result of comparison) assert.ok(Math.abs(result.finalX - 200) <= 1, JSON.stringify(result));
+console.log('Regular-shake comparison and release to ordinary smoothing:', comparison);
 assert.deepEqual(errors,[]);
-console.log('PASS: smoothing/settling, click reset, re-entry, presets, center toggle, pause, reset, Escape, keyboard slider, responsive layout; no JS exceptions.');
+console.log('PASS: smoothing/settling, click/drag alignment, re-entry, presets, center toggle, pause, reset, Escape, keyboard slider, responsive layout; no JS exceptions.');
 ws.close();
