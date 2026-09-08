@@ -30,8 +30,8 @@ await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rect.x+540,y:rect.y+2
 await mouse(540,260,'mouseReleased');await wait(1100);s=await state();
 assert.ok(Math.abs(s.x-540)<=1 && Math.abs(s.y-260)<=1, `Drag lost movement: ${JSON.stringify(s)}`);
 await mouse(-10,-10);assert.equal((await state()).hidden,true);await mouse(110,90);s=await state();assert.equal(s.x,110);assert.equal(s.y,90);
-await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('#demo-center-method').value='detected';document.querySelector('#demo-center-method').dispatchEvent(new Event('change'))");
-assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('#demo-center-method').value"),'detected');
+await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('input[name=center-method][value=detected]').click()");
+assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('input[name=center-method]:checked').value"),'detected');
 await evaluate("document.querySelector('#demo-toggle').click()");await mouse(140,160);await mouse(230,250);s=await state();assert.equal(s.x,230);assert.equal(s.y,250);
 // Reset and keyboard pause.
 await evaluate("document.querySelector('#demo-reset').click()");assert.equal((await state()).mark,false);
@@ -89,7 +89,7 @@ const comparison = await evaluate(`(() => {
   const results = [];
   for (const pattern of ['regular', 'uneven']) for (const checked of [false, true]) {
     pointer('pointerleave', 0);
-    center.value = checked ? 'detected' : 'off'; center.dispatchEvent(new Event('change'));
+    center.querySelector('input[value=' + (checked ? 'detected' : 'off') + ']').click();
     pointer('pointerenter', 0);
     const positions = []; let recognized = false;
     let seed = 937, time = 0, duration = .125, from = 0, to = 65;
@@ -142,14 +142,14 @@ const experiment = await evaluate(`(() => {
     pointerType:'mouse', clientX:rect.left+x, clientY:rect.top+y, bubbles:true,
     button:0, buttons:type==='pointerup'?0:1
   }));
-  method.value='always'; method.dispatchEvent(new Event('change'));
+  method.querySelector('input[value=always]').click();
   pointer('pointerenter',80,80);
   const immediateStatus=document.querySelector('#demo-center-status').textContent;
   pointer('pointermove',160,120); pointer('pointerdown',160,120);
   pointer('pointermove',240,160); pointer('pointerup',240,160);
   for(let i=0;i<500;i++){window.demoTestClock.now+=8;window.demoTestClock.tick();}
   const transform=new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform);
-  const enabled=document.querySelector('#demo-center-method').value==='always';
+  const enabled=document.querySelector('input[name=center-method]:checked').value==='always';
   const visible=!document.querySelector('.demo-window-control').hidden;
   windowInput.value='500';windowInput.dispatchEvent(new Event('input'));
   const label=document.querySelector('#demo-center-window-value').textContent;
@@ -170,6 +170,24 @@ for(const width of [1440,390,320]){
   await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
   assert.equal(await evaluate('document.documentElement.scrollWidth>innerWidth'),false);
 }
+// Click empty space at the far edge of every row, using real browser input.
+assert.equal(await evaluate("document.querySelectorAll('#demo-center-method select').length"), 0);
+for (const mode of ['off', 'detected', 'always']) {
+  const row = await evaluate(`(() => {
+    const label = document.querySelector('input[name=center-method][value=${mode}]').closest('label');
+    label.scrollIntoView({block:'center',behavior:'instant'});
+    const r=label.getBoundingClientRect(); return {x:r.right-6,y:r.top+r.height/2,height:r.height};
+  })()`);
+  assert.ok(row.height >= 64);
+  for (const type of ['mousePressed','mouseReleased'])
+    await send('Input.dispatchMouseEvent',{type,x:row.x,y:row.y,button:'left',clickCount:1});
+  assert.equal(await evaluate("document.querySelector('input[name=center-method]:checked').value"),mode);
+}
+await evaluate("document.querySelector('input[name=center-method][value=always]').focus()");
+await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowLeft',code:'ArrowLeft',windowsVirtualKeyCode:37});
+await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowLeft',code:'ArrowLeft',windowsVirtualKeyCode:37});
+assert.equal(await evaluate("document.querySelector('input[name=center-method]:checked').value"),'detected');
+console.log('PASS: full-row radio click targets and keyboard selection');
 await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1200,deviceScaleFactor:1,mobile:false});
 await evaluate("document.querySelector('#try-it').scrollIntoView({behavior:'instant'})");
 fs.writeFileSync('/tmp/stable-mouse-always-center.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));

@@ -771,3 +771,12 @@ footer>div a {
 @media (max-width: 900px) { .demo-controls #demo-center-help { grid-column: 1 / -1; } }
 
 .demo-presets button[aria-pressed=true] { color: var(--white); background: var(--green); border-color: var(--green); }
+
+/* Full-row native radios preserve keyboard and screen-reader interaction. */
+.demo-methods { border: 0; padding: 0; margin: 24px 0 0; min-width: 0; }
+.demo-methods legend { padding: 0; margin-bottom: 12px; font-size: 16px; }
+.demo-controls .demo-methods label.demo-method { display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 68px; margin: 8px 0; padding: 12px; border: 2px solid var(--line); border-radius: 8px; font-size: 16px; font-weight: 400; cursor: pointer; }
+.demo-method input { flex: 0 0 26px; width: 26px; height: 26px; margin: 0; accent-color: var(--green); }
+.demo-method:hover, .demo-method:has(input:checked) { background: var(--sage); border-color: var(--green) !important; }
+.demo-method:focus-within { outline: 3px solid #a74d22; outline-offset: 3px; }
+.demo-amount-label { font-size: 16px; margin-bottom: 10px; }

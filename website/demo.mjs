@@ -81,7 +81,7 @@ function move(event) {
   if (!enabled) paint();
 }
 function configure() {
-  const nextMode = method.value;
+  const nextMode = method.querySelector('input:checked').value;
   if (nextMode !== mode) {
     leave();
     filter = nextMode === 'always' ? new AlwaysCenter() : new Stabilizer();
@@ -90,10 +90,10 @@ function configure() {
   filter.configure({ strength: Number(strength.value), speed: 1, centerTracking: mode !== 'off',
     windowSeconds: Number(centerWindow.value) / 1000 });
   section.querySelector('#demo-strength-value').textContent = `${strength.value}%`;
-  status.textContent = enabled ? 'Demo smoothing is on' : 'Paused · Both cursors move together';
-  toggle.textContent = enabled ? 'Pause smoothing' : 'Enable smoothing';
+  status.textContent = enabled ? 'Demo stability is on' : 'Stability is off · Both cursors move together';
+  toggle.textContent = enabled ? 'Turn Stability Off' : 'Turn Stability On';
   toggle.setAttribute('aria-pressed', String(enabled));
-  section.querySelector('.demo-window-control').hidden = method.value !== 'always';
+  section.querySelector('.demo-window-control').hidden = method.querySelector('input:checked').value !== 'always';
   section.querySelector('#demo-center-window-value').textContent = `${centerWindow.value} ms`;
   centerHelp.textContent = mode === 'off' ? 'Softens all mouse movement.'
     : mode === 'always' ? 'Follows the center of recent movement. This can feel steadier, but slower.'

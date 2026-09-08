@@ -63,15 +63,16 @@
     <div class="demo-layout">
       <fieldset class="demo-controls" disabled>
         <legend>Try your settings</legend>
-        <button id="demo-toggle" class="button primary" type="button" aria-pressed="true">Pause smoothing</button>
-        <p id="demo-status" class="small" role="status">Demo smoothing is on</p>
+        <button id="demo-toggle" class="button primary" type="button" aria-pressed="true">Turn Stability Off</button>
+        <p id="demo-status" class="small" role="status">Demo stability is on</p>
+        <p class="demo-amount-label">How much smoothing?</p>
         <div class="demo-presets" role="group" aria-label="Smoothing presets"><button type="button" data-strength="25">Light</button><button type="button" data-strength="55">Balanced</button><button type="button" data-strength="85">Strong</button></div>
-        <label for="demo-center-method">How to steady movement</label>
-        <select id="demo-center-method" aria-describedby="demo-center-help">
-          <option value="off">Smoothing only</option>
-          <option value="detected">Recognize shaking</option>
-          <option value="always">Always follow the center</option>
-        </select>
+        <fieldset id="demo-center-method" class="demo-methods" aria-describedby="demo-center-help">
+          <legend>How to steady movement</legend>
+          <label class="demo-method"><input type="radio" name="center-method" value="off" checked><span>Smoothing only</span></label>
+          <label class="demo-method"><input type="radio" name="center-method" value="detected"><span>Recognize shaking</span></label>
+          <label class="demo-method"><input type="radio" name="center-method" value="always"><span>Always follow the center</span></label>
+        </fieldset>
         <p id="demo-center-help">Softens all mouse movement.</p>
         <details class="demo-more">
           <summary>More options</summary>
