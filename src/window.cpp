@@ -59,6 +59,11 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     strength->setAccessibleName("Smoothing strength"); strength->setValue(std::clamp(settings.value("strength", 55).toInt(), 0, 100));
     smoothingLayout->addWidget(strength);
     smoothingLayout->addWidget(copy("More smoothing steadies repeated shaking, including large shakes, but adds delay. Strong is steadier and takes longer to follow your hand."));
+    centerTracking = new QCheckBox("Track the center of repeated shaking (preview)");
+    centerTracking->setObjectName("centerTracking");
+    centerTracking->setChecked(settings.value("centerTracking", false).toBool());
+    smoothingLayout->addWidget(centerTracking);
+    smoothingLayout->addWidget(copy("Helps hold small targets during regular back-and-forth shaking. It takes several reversals to recognize a pattern and still adds delay. Turn it off for drawing or if it interferes with your movement."));
     speedValue = copy(""); smoothingLayout->addWidget(speedValue);
     speed = new QSlider(Qt::Horizontal); speed->setObjectName("speed"); speed->setRange(25, 200); speed->setPageStep(10);
     speed->setAccessibleName("Pointer speed, percent"); speed->setValue(std::clamp(settings.value("speed", 100).toInt(), 25, 200)); smoothingLayout->addWidget(speed);
@@ -83,7 +88,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     auto *clear = new QPushButton("Clear practice area"); practiceLayout->addWidget(clear); connect(clear, &QPushButton::clicked, practice, &Practice::clear);
     tabs->addTab(practicePage, "Practice");
     auto *about = new QWidget; auto *aboutLayout = new QVBoxLayout(about);
-    aboutLayout->addWidget(copy("Stable Mouse 0.1.1 • Preview"));
+    aboutLayout->addWidget(copy("Stable Mouse 0.1.2 • Preview"));
     aboutLayout->addWidget(copy("Free software, licensed under GPL-3.0-only. No account, advertising, analytics, or movement history."));
     aboutLayout->addWidget(copy(backend->instructions()));
     aboutLayout->addWidget(copy("This preview needs testing on real devices. Smoothing preferences vary. The app does not assess tremor severity or provide medical measurements."));
@@ -95,6 +100,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     connect(toggleButton, &QPushButton::clicked, this, &Window::toggle);
     connect(strength, &QSlider::valueChanged, this, &Window::updateConfig);
     connect(speed, &QSlider::valueChanged, this, &Window::updateConfig);
+    connect(centerTracking, &QCheckBox::toggled, this, &Window::updateConfig);
     connect(enabledOnLaunch, &QCheckBox::toggled, this, [this](bool on) { settings.setValue("enableOnLaunch", on); });
     connect(login, &QCheckBox::toggled, this, [this, testMode](bool on) {
         if (testMode) return;
@@ -138,7 +144,8 @@ void Window::updateConfig() {
     strengthValue->setText(QString("Smoothing strength: %1%").arg(strength->value()));
     speedValue->setText(QString("Pointer speed: %1%").arg(speed->value()));
     settings.setValue("strength", strength->value()); settings.setValue("speed", speed->value());
-    backend->configure({double(strength->value()), speed->value() / 100.0});
+    settings.setValue("centerTracking", centerTracking->isChecked());
+    backend->configure({double(strength->value()), speed->value() / 100.0, centerTracking->isChecked()});
 }
 void Window::showProblem(const QString &message) {
     starting = false; syncState(); notice->setText(message); notice->show(); reveal();

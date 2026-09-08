@@ -34,6 +34,7 @@ jobs:
       - name: Test
         env:
           STABLE_MOUSE_TEST_NATIVE_INPUT: '1'
+          STABLE_MOUSE_TEST_CENTER: '1'
         run: ctest --test-dir build -C Release --output-on-failure
       - name: Package
         working-directory: build
@@ -77,6 +78,7 @@ jobs:
           name: stable-mouse-Windows-test-tools
           path: |
             build/Release/windows_backend_tests.exe
+            build/Release/windows_focus_tests.exe
             build/Testing/Temporary/LastTest.log
           if-no-files-found: error
       - uses: actions/upload-artifact@v4

@@ -31,7 +31,7 @@ private:
     QLabel *status, *notice, *strengthValue, *speedValue;
     QSlider *strength, *speed;
     QComboBox *device = nullptr;
-    QCheckBox *login;
+    QCheckBox *login, *centerTracking;
     QSystemTrayIcon *tray = nullptr;
     QAction *trayToggle = nullptr;
     bool starting = false;

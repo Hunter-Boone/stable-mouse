@@ -10,11 +10,16 @@
 #include <fstream>
 #include <QPainter>
 #include <QWidget>
+#include <QMouseEvent>
 #include "motion_scenarios.h"
 
 // Visualize the unfiltered path too: the real cursor alone only shows output.
 class ReplayView : public QWidget {
 public:
+    int presses = 0, releases = 0, dragMoves = 0;
+    void mousePressEvent(QMouseEvent *) override { ++presses; }
+    void mouseReleaseEvent(QMouseEvent *) override { ++releases; }
+    void mouseMoveEvent(QMouseEvent *event) override { if (event->buttons() & Qt::LeftButton) ++dragMoves; }
     scenarios::Sample input{}; Motion output{}; QString scenario;
     void paintEvent(QPaintEvent *) override {
         QPainter p(this); p.fillRect(rect(), Qt::white);
@@ -38,9 +43,9 @@ bool replayShake(Backend &backend, const scenarios::Scenario &scenario, ReplayVi
     } restore{backend, original};
     const POINT center{GetSystemMetrics(SM_CXSCREEN) / 2, GetSystemMetrics(SM_CYSCREEN) / 2};
     SetCursorPos(center.x, center.y);
-    backend.configure({85, 1});
+    backend.configure({85, 1, qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_CENTER")});
     if (!backend.start({})) return false;
-    view.scenario = scenario.name;
+    view.scenario = QString(scenario.name) + (qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_CENTER") ? " | center tracking on" : "");
     QEventLoop loop; QTimer timer; QElapsedTimer elapsed;
     timer.setTimerType(Qt::PreciseTimer); timer.setInterval(8);
     Motion previous{}; scenarios::Metrics metrics;
@@ -65,6 +70,38 @@ bool replayShake(Backend &backend, const scenarios::Scenario &scenario, ReplayVi
     return injectionOk && metrics.count > 100 && withinBound;
 }
 
+void pump(int milliseconds) {
+    QEventLoop loop; QTimer::singleShot(milliseconds, &loop, &QEventLoop::quit); loop.exec();
+}
+bool clickAndDrag(Backend &backend, ReplayView &view) {
+    POINT original{}; if (!GetCursorPos(&original)) return false;
+    view.scenario = "Click reset and drag in this test window";
+    view.raise(); view.activateWindow(); pump(100);
+    const auto start = view.mapToGlobal(QPoint(300,350));
+    SetCursorPos(start.x(),start.y());
+    const auto inside = [&] {
+        POINT p{};return GetCursorPos(&p) && GetAncestor(WindowFromPoint(p),GA_ROOT)==reinterpret_cast<HWND>(view.winId());
+    };
+    if (!inside()) { SetCursorPos(original.x,original.y); return false; }
+    backend.configure({85,1,true});
+    if (!backend.start({})) { SetCursorPos(original.x,original.y);return false; }
+    bool ok = backend.replayMotion(80,0);pump(40);
+    ok = ok && inside();
+    bool down = false;
+    if (ok) {down=backend.replayButton(true);ok=down;}
+    pump(80);POINT clicked{};GetCursorPos(&clicked);
+    pump(200);POINT held{};GetCursorPos(&held);
+    ok = ok && view.presses==1 && std::abs(held.x-clicked.x)<=2 && std::abs(held.y-clicked.y)<=2;
+    if (ok) {ok=backend.replayMotion(100,0);pump(1600);}
+    POINT dragged{};GetCursorPos(&dragged);
+    ok = ok && std::abs(dragged.x-held.x-100)<=3 && view.dragMoves>0;
+    if (down) {backend.replayButton(false);pump(100);}
+    ok = ok && view.releases==1;
+    backend.stop();SetCursorPos(original.x,original.y);
+    std::cout<<"Click/drag: presses="<<view.presses<<", releases="<<view.releases<<", drag moves="<<view.dragMoves<<", travel="<<dragged.x-held.x<<'\n';
+    return ok;
+}
+
 int main(int argc, char **argv) {
     QApplication app(argc, argv);
     if (!qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_NATIVE_INPUT")) {
@@ -85,6 +122,7 @@ int main(int argc, char **argv) {
     for (const auto &scenario : scenarios::cases) {
         if (!replayShake(*backend, scenario, view, trace)) { std::cerr << "Native motion scenario failed.\n"; return 1; }
     }
+    if (!clickAndDrag(*backend, view)) { std::cerr << "Click reset or drag forwarding failed.\n"; return 1; }
     view.hide();
     backend->configure({55, 1});
     for (int i = 0; i < 3; ++i) {

@@ -35,6 +35,9 @@ private slots:
             Window window(std::move(fake), false, true);
             auto *toggle = window.findChild<QPushButton *>("toggle");
             QVERIFY(!input->active());
+            QVERIFY(!input->config.centerTracking);
+            window.findChild<QCheckBox *>("centerTracking")->setChecked(true);
+            QVERIFY(input->config.centerTracking);
             QTest::mouseClick(toggle, Qt::LeftButton); QVERIFY(input->active());
             auto *strength = window.findChild<QSlider *>("strength"); strength->setValue(80); QCOMPARE(input->config.strength, 80.0);
             auto *speed = window.findChild<QSlider *>("speed"); speed->setValue(60); QCOMPARE(input->config.speed, .6);
@@ -47,6 +50,7 @@ private slots:
         Window restored(std::move(fake), false, true);
         QCOMPARE(input->config.strength, 80.0); QCOMPARE(input->config.speed, .6);
         QVERIFY(restored.findChild<QCheckBox *>("enableOnLaunch")->isChecked());
+        QVERIFY(input->config.centerTracking);
         QVERIFY(!input->active()); // Test mode never takes control of the real pointer.
     }
     void startupEscaping() {

@@ -18,8 +18,11 @@ public:
         return "Works with the desktop pointer, including dragging. Games that read raw mouse input may bypass stabilization. Windows protects administrator windows from input sent by ordinary apps.";
     }
     QString escapeHint() const override { return "Press Ctrl + Alt + F8 anywhere to pause."; }
-    void configure(FilterConfig c) override { strength.store(c.strength); speed.store(c.speed); }
+    void configure(FilterConfig c) override { strength.store(c.strength); speed.store(c.speed); centerTracking.store(c.centerTracking); }
 #ifdef STABLE_MOUSE_TEST_REPLAY
+    bool replayButton(bool down) override {
+        return PostThreadMessageW(threadId.load(), WM_APP + 2, down, 0) != 0;
+    }
     bool replayMotion(int x, int y) override {
         return PostThreadMessageW(threadId.load(), WM_APP + 1, WPARAM(x), LPARAM(y)) != 0;
     }
@@ -53,6 +56,12 @@ public:
             ready.set_value({});
             while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
 #ifdef STABLE_MOUSE_TEST_REPLAY
+                if (msg.message == WM_APP + 2) {
+                    INPUT input{}; input.type = INPUT_MOUSE;
+                    input.mi.dwFlags = msg.wParam ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
+                    input.mi.dwExtraInfo = 0x53544D54;
+                    SendInput(1, &input, sizeof(input));
+                }
                 if (msg.message == WM_APP + 1) {
                     // Read and inject on the input thread. Computing an absolute
                     // replay target on the UI thread races the output timer and
@@ -76,7 +85,7 @@ public:
                 }
                 if (msg.message == WM_TIMER) {
                     const auto now = std::chrono::steady_clock::now();
-                    filter.configure({strength.load(), speed.load()});
+                    filter.configure({strength.load(), speed.load(), centerTracking.load()});
                     auto delta = filter.pixels(std::chrono::duration<double>(now - last).count()); last = now;
                     if (delta.x || delta.y) {
                         POINT p{};
@@ -132,7 +141,7 @@ private:
         if (kind == WM_MOUSEMOVE) {
             POINT position{};
             if (!GetCursorPos(&position)) return CallNextHookEx(nullptr, code, kind, data);
-            self->filter.configure({self->strength.load(), self->speed.load()});
+            self->filter.configure({self->strength.load(), self->speed.load(), self->centerTracking.load()});
             self->filter.add(double(event->pt.x) - position.x, double(event->pt.y) - position.y);
 #ifdef STABLE_MOUSE_TEST_REPLAY
             if (replay) { self->replaySum += double(event->pt.x) - position.x; ++self->replayCount; }
@@ -148,6 +157,7 @@ private:
     std::thread worker;
     std::atomic<DWORD> threadId{0};
     std::atomic<double> strength{55}, speed{1};
+    std::atomic<bool> centerTracking{false};
     HHOOK hook = nullptr;
     Stabilizer filter;
 #ifdef STABLE_MOUSE_TEST_REPLAY

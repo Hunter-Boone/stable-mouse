@@ -18,6 +18,7 @@ public:
     bool active() const { return active_; }
 #ifdef STABLE_MOUSE_TEST_REPLAY
     virtual bool replayMotion(int x, int y) = 0;
+    virtual bool replayButton(bool down) = 0;
 #endif
 signals:
     void stateChanged(bool active);

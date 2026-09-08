@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
     const bool testMode = smoke || screenshotIndex >= 0;
     QCoreApplication::setOrganizationName(testMode ? "StableMouseTests" : "StableMouse");
     QCoreApplication::setApplicationName("Stable Mouse");
-    QCoreApplication::setApplicationVersion("0.1.1");
+    QCoreApplication::setApplicationVersion("0.1.2");
     QStandardPaths::setTestModeEnabled(testMode);
     const auto dataPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(dataPath);

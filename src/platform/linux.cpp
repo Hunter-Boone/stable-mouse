@@ -63,7 +63,7 @@ public:
         const auto helper = QFile::exists(local) ? local : installed;
         if (!QFile::exists(helper)) { emit problem("The input helper is missing. Reinstall Stable Mouse."); return false; }
         errors.clear(); output.clear(); stopping = false;
-        process.start("pkexec", {helper, device.section(" | ", 0, 0), QString::number(config.strength), QString::number(config.speed)});
+        process.start("pkexec", {helper, device.section(" | ", 0, 0), QString::number(config.strength), QString::number(config.speed), config.centerTracking ? "1" : "0"});
         heartbeat.start(); return true;
     }
     void stop() override {
@@ -75,7 +75,7 @@ public:
         setActive(false);
     }
 private:
-    QByteArray command() const { return "CONFIG " + QByteArray::number(config.strength) + " " + QByteArray::number(config.speed) + "\n"; }
+    QByteArray command() const { return "CONFIG " + QByteArray::number(config.strength) + " " + QByteArray::number(config.speed) + (config.centerTracking ? " 1\n" : " 0\n"); }
     FilterConfig config;
     QProcess process; QTimer heartbeat;
     QByteArray errors, output;

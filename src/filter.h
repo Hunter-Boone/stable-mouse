@@ -2,11 +2,13 @@
 #pragma once
 #include <algorithm>
 #include <cmath>
+#include "center_tracker.h"
 
 struct Motion { double x = 0; double y = 0; };
 struct FilterConfig {
     double strength = 55; // 0..100
     double speed = 1;     // 0.25..2
+    bool centerTracking = false; // opt-in preview for repeated reversals
 };
 
 // A time-based, relative-motion low-pass filter. Residual motion settles even
@@ -15,6 +17,8 @@ struct FilterConfig {
 class Stabilizer {
 public:
     void configure(FilterConfig c) {
+        if (c.centerTracking != config_.centerTracking || (config_.centerTracking && (c.strength == 0) != (config_.strength == 0))) reset();
+        config_.centerTracking = c.centerTracking;
         config_.strength = std::isfinite(c.strength) ? std::clamp(c.strength, 0.0, 100.0) : 55;
         config_.speed = std::isfinite(c.speed) ? std::clamp(c.speed, 0.25, 2.0) : 1;
     }
@@ -34,6 +38,11 @@ public:
             pending_ = {}; second_ = {}; return out;
         }
         const double tau = 0.012 + 0.000022 * config_.strength * config_.strength;
+        if (config_.centerTracking) {
+            Motion out{centerX_.step(pending_.x, std::min(seconds,.1), tau),
+                       centerY_.step(pending_.y, std::min(seconds,.1), tau)};
+            pending_ = {}; return out;
+        }
         const double h = std::min(seconds, 0.1) / tau;
         const double decay = std::exp(-h), alpha = -std::expm1(-h);
         Motion out{second_.x * alpha + pending_.x * (alpha - h * decay),
@@ -43,7 +52,7 @@ public:
         pending_.x *= decay; pending_.y *= decay;
         return out;
     }
-    void reset() { pending_ = {}; second_ = {}; fraction_ = {}; }
+    void reset() { pending_ = {}; second_ = {}; fraction_ = {}; centerX_ = {}; centerY_ = {}; }
     // Preserve sub-pixel movement instead of rounding every sample to zero.
     Motion pixels(double seconds) {
         auto m = step(seconds);
@@ -53,6 +62,7 @@ public:
         return out;
     }
 private:
+    CenterTracker centerX_, centerY_;
     FilterConfig config_;
     Motion pending_, second_, fraction_;
 };

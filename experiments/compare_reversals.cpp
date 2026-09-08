@@ -65,6 +65,7 @@ int main(int argc,char **argv) {
     for(auto c : {Case{"intentional_same_4Hz_path",7},Case{"clean_12px_nudge",8},Case{"20px_nudge_with_shake",9},Case{"amplitude_ramp",10},Case{"frequency_sweep",11},Case{"intentional_slow_corrections",12},Case{"shake_stops",13}})cases.push_back(c);
     for(auto c:cases){
         Stabilizer current;current.configure({85,1});run(current,"current_Strong",c,trace);
+        Stabilizer improved; improved.configure({85,1,true}); run(improved,"center_tracking_preview",c,trace);
         run(ReversalFilter{},"midpoint",c,trace);
         run(ReversalFilter{6},"midpoint_hold_6px",c,trace);
         run(ReversalFilter{0,true},"Strong_plus_gated_midpoint",c,trace);

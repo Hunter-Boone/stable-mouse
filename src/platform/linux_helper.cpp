@@ -43,7 +43,7 @@ struct Device {
 int fail(const char *message) { std::cerr << message << '\n'; return 1; }
 }
 int main(int argc, char **argv) {
-    if (argc != 4) return fail("Usage: stable-mouse-input /dev/input/eventN strength speed");
+    if ((argc != 4 && argc != 5)) return fail("Usage: stable-mouse-input /dev/input/eventN strength speed [centerTracking]");
     const std::string path = argv[1];
     const std::string prefix = "/dev/input/event";
     if (path.compare(0, prefix.size(), prefix) != 0 || path.size() == prefix.size() ||
@@ -52,6 +52,10 @@ int main(int argc, char **argv) {
     char *end1 = nullptr, *end2 = nullptr;
     FilterConfig config{std::strtod(argv[2], &end1), std::strtod(argv[3], &end2)};
     if (*end1 || *end2 || !std::isfinite(config.strength) || !std::isfinite(config.speed)) return fail("Invalid filter settings.");
+    if (argc == 5) {
+        if (std::string(argv[4]) != "0" && std::string(argv[4]) != "1") return fail("Invalid center tracking setting.");
+        config.centerTracking = std::string(argv[4]) == "1";
+    }
     Device device;
     device.fd = open(path.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC | O_NOFOLLOW);
     struct stat statbuf{};
@@ -101,6 +105,14 @@ int main(int argc, char **argv) {
                 if (line.rfind("CONFIG ", 0) == 0) {
                     std::istringstream values(line.substr(7));
                     if (!(values >> config.strength >> config.speed)) return fail("Invalid filter settings.");
+                    int center = 0;
+                    values >> std::ws;
+                    if (!values.eof()) {
+                        if (!(values >> center) || (center != 0 && center != 1)) return fail("Invalid center tracking setting.");
+                        values >> std::ws;
+                        if (!values.eof()) return fail("Invalid filter settings.");
+                    }
+                    config.centerTracking = center == 1;
                     filter.configure(config);
                 }
             }

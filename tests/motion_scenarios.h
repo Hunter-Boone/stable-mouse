@@ -6,14 +6,16 @@
 namespace scenarios {
 struct Sample { Motion raw, intended; };
 struct Scenario { const char *name; double amplitude, hz, maxErrorRatio; int kind; };
-inline const std::array<Scenario, 7> cases{{
+inline const std::array<Scenario, 9> cases{{
     {"baseline_4Hz_300px_span", 150, 4, .12, 0},
     {"large_4Hz_1200px_span", 600, 4, .12, 0},
     {"large_2Hz_1200px_span", 600, 2, .30, 0},
     {"slow_1Hz_600px_span", 300, 1, .65, 0},
     {"irregular_two_axes", 0, 0, .35, 1},
     {"reach_with_shake", 300, 4, .45, 2},
-    {"reach_without_shake", 0, 0, 0, 2}
+    {"reach_without_shake", 0, 0, 0, 2},
+    {"shake_stops", 300, 4, .2, 3},
+    {"fine_correction_with_shake", 300, 4, .2, 4}
 }};
 inline Sample sample(const Scenario &s, double t) {
     const auto wave = [t](double hz) { return std::sin(2 * std::acos(-1.) * hz * t); };
@@ -22,7 +24,9 @@ inline Sample sample(const Scenario &s, double t) {
         const double u = std::clamp(t - 2., 0., 1.);
         intended = {300 * u*u*(3-2*u), 0};
     }
+    if (s.kind == 4) intended.x = 20*std::clamp(t-2.,0.,1.);
     Motion shake{s.amplitude * wave(s.hz), 0};
+    if (s.kind == 3 && t >= 3) shake = {};
     if (s.kind == 1) {
         // Amplitude modulation and unrelated frequencies on each axis.
         // An engineering stress case, not a recorded or diagnostic tremor.
