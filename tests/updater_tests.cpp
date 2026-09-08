@@ -17,6 +17,8 @@
 #include <QStandardPaths>
 #include <QSysInfo>
 #include <QTimer>
+#include <QTcpServer>
+#include <QTcpSocket>
 #include <QtTest>
 #include <cstring>
 
@@ -226,13 +228,62 @@ private slots:
             QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 3);
         }
     }
+    void streamedInstallerDownload() {
+        if (suffix().isEmpty()) QSKIP("No packaged updater target on this test host");
+        const QByteArray payload(2 * 1024 * 1024, 'x');
+        auto entry = release(); auto asset = entry["assets"].toArray()[0].toObject();
+        asset["size"] = payload.size();
+        asset["digest"] = "sha256:" + QString::fromLatin1(QCryptographicHash::hash(payload, QCryptographicHash::Sha256).toHex());
+        entry["assets"] = QJsonArray{asset}; const auto metadata = feed(entry);
+        QTcpServer server; QVERIFY(server.listen(QHostAddress::LocalHost));
+        connect(&server, &QTcpServer::newConnection, this, [&] {
+            auto *socket = server.nextPendingConnection();
+            connect(socket, &QTcpSocket::readyRead, socket, [socket, metadata, payload] {
+                const auto request = socket->readAll();
+                const auto body = request.startsWith("GET /metadata ") ? metadata : payload;
+                socket->write("HTTP/1.1 200 OK\r\nContent-Length: " + QByteArray::number(body.size()) + "\r\nConnection: close\r\n\r\n");
+                socket->write(body); socket->disconnectFromHost();
+            });
+            connect(socket, &QTcpSocket::disconnected, socket, &QObject::deleteLater);
+        });
+        class LocalNetwork final : public QNetworkAccessManager {
+        public:
+            quint16 port = 0;
+            QNetworkReply *createRequest(Operation op, const QNetworkRequest &original, QIODevice *data) override {
+                QNetworkRequest request(original);
+                request.setUrl(QUrl(QString("http://127.0.0.1:%1/%2").arg(port).arg(original.url().host() == "api.github.com" ? "metadata" : "installer")));
+                return QNetworkAccessManager::createRequest(op, request, data);
+            }
+        } network;
+        network.port = server.serverPort();
+        Updater updater(nullptr, &network); QSignalSpy progress(&updater, &Updater::progress);
+        updater.check(); QTRY_VERIFY_WITH_TIMEOUT(updater.state() != Updater::State::Checking, 10000);
+        QCOMPARE(updater.state(), Updater::State::Available);
+        updater.download(); QTRY_VERIFY_WITH_TIMEOUT(updater.state() != Updater::State::Downloading, 10000);
+        QCOMPARE(updater.state(), Updater::State::Ready);
+        QVERIFY(updater.verifyInstaller()); QVERIFY(progress.size() > 1);
+        QCOMPARE(QFileInfo(updater.installerPath()).size(), payload.size());
+    }
     void livePublishedRelease() {
         if (!qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_LIVE_UPDATER")) QSKIP("Opt-in read-only GitHub integration check");
         QVERIFY2(!suffix().isEmpty(), qPrintable("No packaged updater target for " + QSysInfo::productType() + "/" + QSysInfo::buildCpuArchitecture()));
-        Updater updater;
-        updater.check(); QTRY_COMPARE_WITH_TIMEOUT(updater.state(), Updater::State::Available, 45000);
+        QNetworkAccessManager network;
+        connect(&network, &QNetworkAccessManager::finished, this, [](QNetworkReply *reply) {
+            qInfo() << "Update request" << reply->url().host() << reply->error() << reply->errorString();
+        });
+        Updater updater(nullptr, &network);
+        connect(&updater, &Updater::changed, this, [&] { qInfo() << "Updater state" << int(updater.state()) << updater.message(); });
+        qint64 lastReported = 0;
+        connect(&updater, &Updater::progress, this, [&](qint64 received, qint64 total) {
+            if (!lastReported || received - lastReported >= 1024 * 1024 || received == total) {
+                qInfo() << "Downloaded bytes" << received << "of" << total; lastReported = received;
+            }
+        });
+        updater.check(); QTRY_VERIFY_WITH_TIMEOUT(updater.state() != Updater::State::Checking, 45000);
+        QCOMPARE(updater.state(), Updater::State::Available);
         QVERIFY(!updater.release().download.isEmpty());
-        updater.download(); QTRY_COMPARE_WITH_TIMEOUT(updater.state(), Updater::State::Ready, 120000);
+        updater.download(); QTRY_VERIFY_WITH_TIMEOUT(updater.state() != Updater::State::Downloading, 120000);
+        QCOMPARE(updater.state(), Updater::State::Ready);
         QVERIFY(updater.verifyInstaller());
         qInfo() << "Verified published installer" << updater.release().version << updater.release().fileName << updater.release().size;
     }
