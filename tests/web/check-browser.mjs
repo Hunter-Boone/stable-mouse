@@ -124,6 +124,49 @@ assert.equal(comparison[1].recognized, true);
 assert.equal(comparison[1].finalStatus, 'Waiting for repeated reversals. Using ordinary smoothing.');
 for (const result of comparison) assert.ok(Math.abs(result.finalX - 200) <= 1, JSON.stringify(result));
 console.log('Regular/uneven-shake comparison and release to ordinary smoothing:', comparison);
+// The experiment runs immediately, without reversal recognition, and keeps
+// clicks/drags continuous. Exercise its controls and actual rendered cursor.
+const experiment = await evaluate(`(() => {
+  const area = document.querySelector('.demo-area');
+  const method = document.querySelector('#demo-center-method');
+  const windowInput = document.querySelector('#demo-center-window');
+  const rect = area.getBoundingClientRect();
+  const pointer = (type, x, y) => area.dispatchEvent(new PointerEvent(type, {
+    pointerType:'mouse', clientX:rect.left+x, clientY:rect.top+y, bubbles:true,
+    button:0, buttons:type==='pointerup'?0:1
+  }));
+  method.value='always'; method.dispatchEvent(new Event('change'));
+  pointer('pointerenter',80,80);
+  const immediateStatus=document.querySelector('#demo-center-status').textContent;
+  pointer('pointermove',160,120); pointer('pointerdown',160,120);
+  pointer('pointermove',240,160); pointer('pointerup',240,160);
+  for(let i=0;i<500;i++){window.demoTestClock.now+=8;window.demoTestClock.tick();}
+  const transform=new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform);
+  const enabled=document.querySelector('#demo-center').checked;
+  const visible=!document.querySelector('.demo-window-control').hidden;
+  windowInput.value='500';windowInput.dispatchEvent(new Event('input'));
+  const label=document.querySelector('#demo-center-window-value').textContent;
+  const reset=document.querySelector('.demo-cursor').hasAttribute('hidden');
+  document.querySelector('#demo-toggle').click();
+  pointer('pointerenter',90,90);pointer('pointermove',200,170);
+  const paused=new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform);
+  document.querySelector('#demo-toggle').click();
+  return {immediateStatus,x:transform.m41,y:transform.m42,enabled,visible,label,reset,
+    pausedX:paused.m41,pausedY:paused.m42};
+})()`);
+assert.equal(experiment.immediateStatus,'Always estimating the center, then smoothing.');
+assert.ok(Math.abs(experiment.x-240)<=1 && Math.abs(experiment.y-160)<=1, JSON.stringify(experiment));
+assert.ok(experiment.enabled && experiment.visible && experiment.reset);
+assert.equal(experiment.label,'500 ms');
+assert.equal(experiment.pausedX,200);assert.equal(experiment.pausedY,170);
+for(const width of [1440,390,320]){
+  await send('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:false});
+  assert.equal(await evaluate('document.documentElement.scrollWidth>innerWidth'),false);
+}
+await send('Emulation.setDeviceMetricsOverride',{width:1440,height:1200,deviceScaleFactor:1,mobile:false});
+await evaluate("document.querySelector('#try-it').scrollIntoView({behavior:'instant'})");
+fs.writeFileSync('/tmp/stable-mouse-always-center.png',Buffer.from((await send('Page.captureScreenshot',{format:'png'})).data,'base64'));
+console.log('Always-center controls, click/drag, pause, reset and responsive layout:',experiment);
 assert.deepEqual(errors,[]);
 console.log('PASS: smoothing/settling, click/drag alignment, re-entry, presets, center toggle, pause, reset, Escape, keyboard slider, responsive layout; no JS exceptions.');
 ws.close();

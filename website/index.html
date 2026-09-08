@@ -69,9 +69,18 @@
         <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
         <label for="demo-speed">Pointer speed <output id="demo-speed-value" for="demo-speed">100%</output></label>
         <input id="demo-speed" type="range" min="25" max="200" value="100" step="1">
-        <label class="demo-check" for="demo-center"><input id="demo-center" type="checkbox">Track the center of repeated shaking <span class="small">Preview</span></label>
+        <label class="demo-check" for="demo-center"><input id="demo-center" type="checkbox">Track the center of movement <span class="small">Preview</span></label>
+        <label for="demo-center-method">Center method</label>
+        <select id="demo-center-method" aria-describedby="demo-center-help">
+          <option value="detected">Recognize shaking</option>
+          <option value="always">Always track center · experiment</option>
+        </select>
+        <div class="demo-window-control" hidden>
+          <label for="demo-center-window">Center window <output id="demo-center-window-value" for="demo-center-window">250 ms</output></label>
+          <input id="demo-center-window" type="range" min="100" max="600" value="250" step="25">
+        </div>
         <p id="demo-center-status" class="small" role="status">Center tracking is off.</p>
-        <p class="small">More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.</p>
+        <p id="demo-center-help" class="small">More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.</p>
         <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
       </fieldset>
       <div class="demo-workspace">

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import { Stabilizer } from './filter.mjs';
+import { AlwaysCenter } from './always-center.mjs';
 const section = document.querySelector('#try-it');
 const area = section.querySelector('.demo-area');
 const ghost = section.querySelector('.demo-cursor');
@@ -7,20 +8,24 @@ const mark = section.querySelector('.demo-click');
 const strength = section.querySelector('#demo-strength');
 const speed = section.querySelector('#demo-speed');
 const center = section.querySelector('#demo-center');
+const method = section.querySelector('#demo-center-method');
+const centerWindow = section.querySelector('#demo-center-window');
+const centerHelp = section.querySelector('#demo-center-help');
 const toggle = section.querySelector('#demo-toggle');
 const status = section.querySelector('#demo-status');
 const centerStatus = section.querySelector('#demo-center-status');
 const hint = section.querySelector('.demo-hint');
 const targets = [...area.querySelectorAll('.demo-target')];
-const filter = new Stabilizer();
+let filter = new Stabilizer(), mode = 'off';
 let enabled = true, active = false, previous = null, output = null, timer = null, lastTime = 0;
 let width = 0, height = 0;
 const clamp = (v, max) => Math.max(0, Math.min(max, v));
 function showCenterStatus() {
-  const axes = [filter.centerX.locked && 'horizontal', filter.centerY.locked && 'vertical'].filter(Boolean);
+  const axes = mode === 'always' ? [] : [filter.centerX.locked && 'horizontal', filter.centerY.locked && 'vertical'].filter(Boolean);
   const message = !center.checked ? 'Center tracking is off.'
     : !enabled ? 'Center tracking is paused.'
     : Number(strength.value) === 0 ? 'Increase smoothing strength to use center tracking.'
+    : mode === 'always' ? 'Always estimating the center, then smoothing.'
     : axes.length ? `Tracking the ${axes.join(' and ')} center.`
     : 'Waiting for repeated reversals. Using ordinary smoothing.';
   if (centerStatus.textContent !== message) centerStatus.textContent = message;
@@ -78,12 +83,24 @@ function move(event) {
   if (!enabled) paint();
 }
 function configure() {
-  filter.configure({ strength: Number(strength.value), speed: Number(speed.value) / 100, centerTracking: center.checked });
+  const nextMode = center.checked ? method.value : 'off';
+  if (nextMode !== mode) {
+    leave();
+    filter = nextMode === 'always' ? new AlwaysCenter() : new Stabilizer();
+    mode = nextMode;
+  }
+  filter.configure({ strength: Number(strength.value), speed: Number(speed.value) / 100, centerTracking: center.checked,
+    windowSeconds: Number(centerWindow.value) / 1000 });
   section.querySelector('#demo-strength-value').textContent = `${strength.value}%`;
   section.querySelector('#demo-speed-value').textContent = `${speed.value}%`;
   status.textContent = enabled ? 'Demo smoothing is on' : 'Paused · Both cursors move together';
   toggle.textContent = enabled ? 'Pause smoothing' : 'Enable smoothing';
   toggle.setAttribute('aria-pressed', String(enabled));
+  section.querySelector('.demo-window-control').hidden = method.value !== 'always';
+  section.querySelector('#demo-center-window-value').textContent = `${centerWindow.value} ms`;
+  centerHelp.textContent = method.value === 'always'
+    ? 'Browser experiment: take the midpoint of the recent movement range, then smooth it. A longer center window can steady the pointer more, but delays deliberate movement too.'
+    : 'More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.';
   showCenterStatus();
 }
 area.addEventListener('pointerenter', enter);
@@ -98,6 +115,8 @@ area.addEventListener('pointerdown', event => {
   mark.style.transform = `translate(${output.x}px, ${output.y}px)`; mark.hidden = false;
 });
 for (const control of [strength, speed, center]) control.addEventListener('input', configure);
+method.addEventListener('change', () => { center.checked = true; configure(); });
+centerWindow.addEventListener('input', () => { leave(); configure(); });
 section.querySelectorAll('[data-strength]').forEach(button => button.addEventListener('click', () => {
   strength.value = button.dataset.strength; configure();
 }));

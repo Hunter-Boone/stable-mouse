@@ -46,3 +46,27 @@ above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 When publishing a new application release, update the version, asset links and
 release-note link in index.html together. Keep platform requirements and preview
 limitations accurate. Do not present generated cursor tests as clinical results.
+
+
+## Always-center experiment
+
+Choose **Always track center** under Center method in the browser demo. Selecting
+it enables center tracking. Uncheck Track the center of movement to compare with
+ordinary smoothing, or choose Recognize shaking to use the development detector.
+
+`always-center.mjs` takes the midpoint of the minimum and maximum recent positions
+on each axis and passes changes in that midpoint through the app's ordinary
+smoother. It runs continuously without recognition thresholds. The center window
+is adjustable from 100 to 600 ms, starting at 250 ms. Stationary samples expire old
+extrema too, so deliberate travel and small corrections reach their destination.
+Changing the method or window resets the comparison. Zero strength bypasses both
+centering and smoothing. This mode is a browser experiment, not an app feature.
+
+Run `node tests/web/check-always-center.mjs` for the algorithm checks. With Balanced
+55%, a 250 ms window, and the test's generated uneven movement, RMS was 13.64px for
+ordinary smoothing, 3.83px for the detector, and 6.63px for always-centering. A clean
+160px reach over 400 ms settled within 2px at 768 ms with ordinary smoothing and
+960 ms with always-centering. These illustrate a tradeoff, not clinical usefulness
+or a claim that always-centering is better. Longer windows can help slower shaking
+but add delay. The browser tests also verify actual control, click/drag, pause,
+and reset behavior in this mode.
