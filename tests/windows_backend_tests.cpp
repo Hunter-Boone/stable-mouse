@@ -21,13 +21,13 @@ bool replayShake(Backend &backend) {
     if (!backend.start({})) return false;
     QEventLoop loop; QTimer timer; QElapsedTimer elapsed;
     timer.setTimerType(Qt::PreciseTimer); timer.setInterval(8);
-    int previous = 0, count = 0; double squared = 0;
+    int previous = 0, count = 0; double squared = 0, sum = 0, peak = 0;
     bool injectionOk = true;
     QObject::connect(&timer, &QTimer::timeout, &loop, [&] {
         const double t = elapsed.nsecsElapsed() / 1e9;
         POINT actual{};
         if (!GetCursorPos(&actual)) { injectionOk = false; loop.quit(); return; }
-        if (t > 1.5) { squared += std::pow(double(actual.x - center.x), 2); ++count; }
+        if (t > 1.5) { const double x = actual.x - center.x; squared += x*x; sum += x; peak = std::max(peak, std::abs(x)); ++count; }
         if (t >= 4) { loop.quit(); return; }
         const int raw = int(std::llround(150 * std::sin(2 * std::acos(-1.) * 4 * t)));
         const int delta = raw - previous; previous = raw;
@@ -42,7 +42,8 @@ bool replayShake(Backend &backend) {
     });
     elapsed.start(); timer.start(); loop.exec(); timer.stop();
     const double ratio = count ? std::sqrt(squared / count) / (150 / std::sqrt(2.)) : 1;
-    std::cout << "Windows cursor replay: 4 Hz, 150 px amplitude, Strong, output/input RMS=" << ratio << '\n';
+    std::cout << "Windows cursor replay: 4 Hz, 150 px amplitude, Strong, output/input RMS=" << ratio
+              << ", mean=" << sum / std::max(count, 1) << ", peak=" << peak << ", last raw=" << previous << '\n';
     return injectionOk && count > 30 && ratio < .12;
 }
 

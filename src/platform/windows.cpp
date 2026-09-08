@@ -5,6 +5,9 @@
 #include <chrono>
 #include <future>
 #include <thread>
+#ifdef STABLE_MOUSE_TEST_REPLAY
+#include <iostream>
+#endif
 
 namespace {
 constexpr ULONG_PTR tag = 0x53544D53;
@@ -38,6 +41,9 @@ public:
                 ready.set_value("Windows could not start the mouse filter."); return;
             }
             filter.reset();
+#ifdef STABLE_MOUSE_TEST_REPLAY
+            replaySum = 0; replayCount = 0;
+#endif
             auto last = std::chrono::steady_clock::now();
             ready.set_value({});
             while (GetMessageW(&msg, nullptr, 0, 0) > 0) {
@@ -70,6 +76,9 @@ public:
             UnhookWindowsHookEx(hook); hook = nullptr;
             KillTimer(nullptr, timer); UnregisterHotKey(nullptr, 1);
             current = nullptr;
+#ifdef STABLE_MOUSE_TEST_REPLAY
+            std::cout << "Hook replay events=" << replayCount << ", summed input=" << replaySum << '\n';
+#endif
         });
         const auto error = result.get();
         if (!error.isEmpty()) { stop(); emit problem(error); return false; }
@@ -102,6 +111,9 @@ private:
             if (!GetCursorPos(&position)) return CallNextHookEx(nullptr, code, kind, data);
             self->filter.configure({self->strength.load(), self->speed.load()});
             self->filter.add(double(event->pt.x) - position.x, double(event->pt.y) - position.y);
+#ifdef STABLE_MOUSE_TEST_REPLAY
+            if (replay) { self->replaySum += double(event->pt.x) - position.x; ++self->replayCount; }
+#endif
             return 1;
         }
         // Drop the settling tail at a press to avoid moving off the click target.
@@ -115,6 +127,9 @@ private:
     std::atomic<double> strength{55}, speed{1};
     HHOOK hook = nullptr;
     Stabilizer filter;
+#ifdef STABLE_MOUSE_TEST_REPLAY
+    double replaySum = 0; int replayCount = 0;
+#endif
 };
 thread_local WindowsBackend *WindowsBackend::current = nullptr;
 }
