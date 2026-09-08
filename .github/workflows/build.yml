@@ -5,6 +5,12 @@ on:
   pull_request:
     paths-ignore: ['website/**', '.github/workflows/pages.yml']
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Full release version matching the tag without v; empty uses the project preview version'
+        type: string
+        required: false
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -15,6 +21,8 @@ jobs:
         os: [windows-2022, macos-14, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    env:
+      STABLE_MOUSE_RELEASE_VERSION: ${{ inputs.release_version }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Linux dependencies
@@ -43,6 +51,17 @@ jobs:
         shell: pwsh
         run: |
           & build/Release/stable-mouse.exe --screenshot "$env:RUNNER_TEMP/stable-mouse-interface.png"
+      - name: Verify updater against published installers
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+          STABLE_MOUSE_TEST_LIVE_UPDATER: '1'
+        run: |
+          if [ "$RUNNER_OS" = Windows ]; then
+            build/Release/updater_tests.exe livePublishedRelease
+          else
+            build/updater_tests livePublishedRelease
+          fi
       - name: Package
         working-directory: build
         run: cpack -C Release

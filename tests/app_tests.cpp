@@ -2,8 +2,12 @@
 #include "window.h"
 #include "practice.h"
 #include "startup.h"
+#include "update_widget.h"
 #include <QCheckBox>
+#include <QDialog>
 #include <QComboBox>
+#include <QButtonGroup>
+#include <QRadioButton>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
@@ -11,6 +15,7 @@
 #include <QScrollBar>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QTabWidget>
 #include <QtTest>
 
 class FakeBackend final : public Backend {
@@ -28,10 +33,24 @@ public:
 class AppTests final : public QObject {
     Q_OBJECT
 private slots:
+    void updatesReleaseMouseAndOpenHelp() {
+        auto fake = std::make_unique<FakeBackend>(); auto *input = fake.get();
+        Window window(std::move(fake), false, true);
+        auto *updates = window.findChild<UpdateWidget *>(); QVERIFY(updates);
+        auto *banner = window.findChild<QPushButton *>("updateBanner"); QVERIFY(banner->isHidden());
+        emit updates->updateAvailable(true); QVERIFY(!banner->isHidden());
+        banner->click(); QCOMPARE(window.findChild<QTabWidget *>()->currentIndex(), 2);
+        window.findChild<QPushButton *>("toggle")->click(); QVERIFY(input->active());
+        emit updates->installing(); QVERIFY(!input->active());
+        QCOMPARE(window.findChild<QPushButton *>("toggle")->text(), QString("Turn Stability On"));
+        if (qEnvironmentVariableIsSet("STABLE_MOUSE_UPDATE_CAPTURE")) {
+            window.showNormal(); window.resize(1000, 1000); QCoreApplication::processEvents();
+            QVERIFY(window.grab().save(qEnvironmentVariable("STABLE_MOUSE_UPDATE_CAPTURE")));
+        }
+    }
     void scrollingDoesNotChangeSettings() {
         auto fake = std::make_unique<FakeBackend>();
         Window window(std::move(fake), false, true);
-        window.findChild<QPushButton *>("moreOptions")->click();
         for (const auto &name : {"strength", "speed", "centerWindow"}) {
             auto *slider = window.findChild<QSlider *>(name);
             const int before = slider->value();
@@ -46,9 +65,9 @@ private slots:
         }
         // A wheel over the actual slider must
         // actually scroll the surrounding page, not merely leave values alone.
-        window.resize(700, 650);
+        window.showNormal(); window.resize(700, 650);
         QCoreApplication::processEvents();
-        auto *scroll = window.findChild<QScrollArea *>();
+        auto *scroll = window.findChild<QScrollArea *>("settingsScroll");
         auto *strength = window.findChild<QSlider *>("strength");
         scroll->ensureWidgetVisible(strength);
         QCoreApplication::processEvents();
@@ -59,12 +78,65 @@ private slots:
         QVERIFY(scroll->verticalScrollBar()->value() > scrollBefore);
         if (qEnvironmentVariableIsSet("STABLE_MOUSE_UI_CAPTURE"))
             QVERIFY(window.grab().save(qEnvironmentVariable("STABLE_MOUSE_UI_CAPTURE")));
-        auto *method = window.findChild<QComboBox *>("centerMethod");
-        method->setCurrentIndex(1); method->setFocus();
-        QWheelEvent wheel(QPointF(20,20), method->mapToGlobal(QPoint(20,20)), QPoint(), QPoint(0,-120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
-        QApplication::sendEvent(method, &wheel);
-        QCOMPARE(method->currentIndex(), 1);
 
+    }
+    void largeTargetsAndMaximizedLaunch() {
+        auto fake = std::make_unique<FakeBackend>(); auto *input = fake.get();
+        Window window(std::move(fake), false, true);
+        QVERIFY(window.isMaximized());
+        QCoreApplication::processEvents();
+        for (const auto &name : {"login", "enableOnLaunch"}) {
+            auto *box = window.findChild<QCheckBox *>(name);
+            QVERIFY(box->height() >= 64);
+            const bool before = box->isChecked();
+            QTest::mouseClick(box, Qt::LeftButton, Qt::NoModifier, QPoint(box->width()-8, box->height()/2));
+            QCOMPARE(box->isChecked(), !before);
+            QTest::keyClick(box, Qt::Key_Space);
+            QCOMPARE(box->isChecked(), before);
+        }
+        for (int mode : {2, 0, 1}) {
+            auto *radio = window.findChild<QRadioButton *>(QString("method%1").arg(mode));
+            QVERIFY(radio->height() >= 64);
+            QTest::mouseClick(radio, Qt::LeftButton, Qt::NoModifier, QPoint(radio->width()-8, radio->height()/2));
+            QCOMPARE(window.findChild<QButtonGroup *>("centerMethod")->checkedId(), mode);
+            QCOMPARE(input->config.centerTracking, mode != 0);
+            QCOMPARE(input->config.alwaysCenter, mode == 2);
+        }
+        QVERIFY(window.findChild<QScrollArea *>("helpScroll"));
+        if (qEnvironmentVariableIsSet("STABLE_MOUSE_DESIGN_CAPTURE")) {
+            const auto path = qEnvironmentVariable("STABLE_MOUSE_DESIGN_CAPTURE");
+            window.showNormal(); window.resize(1440, 1080);
+            window.findChild<QSlider *>("strength")->setValue(55);
+            window.findChild<QSlider *>("speed")->setValue(100);
+            auto *scroll = window.findChild<QScrollArea *>("settingsScroll");
+            QCoreApplication::processEvents();
+            scroll->verticalScrollBar()->setValue(0);
+            QVERIFY(window.grab().save(path + "/settings.png"));
+            QCoreApplication::processEvents();
+            scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
+            QVERIFY(window.grab().save(path + "/startup.png"));
+            window.findChild<QTabWidget *>()->setCurrentIndex(2);
+            QCoreApplication::processEvents();
+            QVERIFY(window.grab().save(path + "/help.png"));
+        }
+    }
+    void quitOffersSafeChoices() {
+        auto fake = std::make_unique<FakeBackend>(); auto *input = fake.get();
+        Window window(std::move(fake), false, true);
+        window.findChild<QPushButton *>("toggle")->click();
+        QVERIFY(input->active());
+        window.findChild<QPushButton *>("quit")->click();
+        auto *dialog = window.findChild<QDialog *>("exitDialog");
+        QVERIFY(dialog && dialog->isVisible());
+        QVERIFY(input->active());
+        QVERIFY(!dialog->findChild<QPushButton *>("exitMinimize")->isEnabled());
+        QVERIFY(dialog->findChild<QPushButton *>("exitCancel")->isDefault());
+        dialog->findChild<QPushButton *>("exitCancel")->click();
+        QVERIFY(window.isVisible()); QVERIFY(input->active());
+        QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+        window.findChild<QPushButton *>("quit")->click();
+        window.findChild<QPushButton *>("exitQuit")->click();
+        QVERIFY(!input->active());
     }
     void controlsAndPersistence() {
         QTemporaryDir configDir;
@@ -77,19 +149,15 @@ private slots:
             auto *toggle = window.findChild<QPushButton *>("toggle");
             QVERIFY(!input->active());
             QVERIFY(!input->config.centerTracking);
-            QVERIFY(!window.findChild<QWidget *>("advancedOptions")->isVisible());
-            window.findChild<QComboBox *>("centerMethod")->setCurrentIndex(2);
+            window.findChild<QRadioButton *>("method2")->click();
             QVERIFY(input->config.alwaysCenter);
-            auto *more=window.findChild<QPushButton *>("moreOptions");
-            QTest::mouseClick(more,Qt::LeftButton);
-            QVERIFY(window.findChild<QWidget *>("advancedOptions")->isVisible());
             window.findChild<QSlider *>("centerWindow")->setValue(450);
             QCOMPARE(input->config.centerWindow,.45);
             QVERIFY(input->config.centerTracking);
             QTest::mouseClick(toggle, Qt::LeftButton); QVERIFY(input->active());
             auto *strength = window.findChild<QSlider *>("strength"); strength->setValue(80); QCOMPARE(input->config.strength, 80.0);
             auto *speed = window.findChild<QSlider *>("speed"); speed->setValue(60); QCOMPARE(input->config.speed, .6);
-            input->emergency(); QVERIFY(!input->active()); QCOMPARE(toggle->text(), QString("Turn smoothing on"));
+            input->emergency(); QVERIFY(!input->active()); QCOMPARE(toggle->text(), QString("Turn Stability On"));
             input->allowStart = false; QTest::mouseClick(toggle, Qt::LeftButton);
             QVERIFY(!input->active()); QCOMPARE(window.findChild<QLabel *>("notice")->text(), QString("Device unavailable"));
             window.findChild<QCheckBox *>("enableOnLaunch")->setChecked(true);
@@ -100,8 +168,7 @@ private slots:
         QVERIFY(restored.findChild<QCheckBox *>("enableOnLaunch")->isChecked());
         QVERIFY(input->config.centerTracking); QVERIFY(input->config.alwaysCenter);
         QCOMPARE(input->config.centerWindow,.45);
-        QVERIFY(!restored.findChild<QWidget *>("advancedOptions")->isVisible());
-        restored.findChild<QComboBox *>("centerMethod")->setCurrentIndex(0);
+        restored.findChild<QRadioButton *>("method0")->click();
         QVERIFY(!input->config.centerTracking); QVERIFY(!input->config.alwaysCenter);
         QVERIFY(!input->active()); // Test mode never takes control of the real pointer.
     }
@@ -113,7 +180,6 @@ private slots:
         QSettings old; old.setValue("centerTracking",true); old.setValue("strength",85); old.sync();
         auto fake=std::make_unique<FakeBackend>(); auto *input=fake.get(); Window window(std::move(fake),false,true);
         QVERIFY(input->config.centerTracking); QVERIFY(!input->config.alwaysCenter); QCOMPARE(input->config.strength,85.);
-        QVERIFY(!window.findChild<QWidget *>("advancedOptions")->isVisible());
     }
     void startupEscaping() {
         const auto contents = Startup::entryContents("/some folder/Mouse & pointer");

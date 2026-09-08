@@ -2,9 +2,9 @@
 
 A free native desktop application for adjustable mouse stabilization. Licensed under GPL-3.0-only. No accounts, telemetry, advertising, or movement history.
 
-**Status: 0.1.3 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
+**Status: 0.1.4 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
 
-[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.3-preview.1) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
+[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.4-preview.1) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
 
 ## Controls
 
@@ -13,8 +13,11 @@ A free native desktop application for adjustable mouse stabilization. Licensed u
 - Adjust pointer speed from 25% to 200%.
 - Practice moving and clicking targets without saving movement data.
 - Open the app at login, and separately choose whether stabilization starts enabled.
+- Check for updates automatically, or use **Help > Check for updates**. Download an update and choose when to open its installer.
 
 The first launch is paused and login startup is off. Settings stay on your computer. Closing the window keeps the app in the tray when available. Quit releases input. If there is no system tray, closing the window stops the app.
+
+Update checks contact GitHub at most once a day automatically and can be switched off in Help. Manual checks are always available. Preview builds receive newer previews and stable releases; stable builds receive stable releases. The app verifies an installer's SHA-256 checksum before offering installation. Installing pauses stabilization and closes the app. Follow the Windows installer, replace the app from the macOS disk image, or install the Debian/Ubuntu package, then reopen Stable Mouse. Settings are preserved. If no matching installer is available, Help links to the release downloads. Updates require a published GitHub release; workflow artifacts alone are not offered.
 
 Smoothing introduces delay. Start with Balanced and adjust for comfort. This software does not measure a medical condition or promise a particular result.
 
@@ -74,11 +77,14 @@ Version 0.1.2 adds optional [center tracking](docs/center-tracking.md) for repea
 ### Simple controls, with room to adjust
 
 The main screen has On/Pause, Light/Balanced/Strong presets, and three methods:
-Smoothing only, Recognize shaking, and Always follow the center. **More options**
-contains fine strength adjustment, the 100–600 ms center window for always-center,
-pointer speed, and the two startup switches. It starts closed; settings are kept
-between runs. Existing center-tracking preferences migrate to Recognize shaking.
-The Practice tab and emergency pause controls remain available.
+Smoothing only, Recognize shaking, and Always follow the center. Settings shows
+fine strength adjustment, the 100–600 ms center window for always-center, pointer
+speed, and the two startup switches. Large radio buttons and checkboxes make
+choices easier to select. The app opens maximized, and Quit offers a choice to
+minimize to the tray or stop the app. Settings are kept between runs. Existing
+center-tracking preferences migrate to Recognize shaking. The Practice tab and
+emergency pause controls remain available. Help contains update controls and
+answers to common questions.
 
 Always follow the center uses the same calculation as the website demo: midpoint
 of the recent movement range, followed by smoothing. It does not wait to recognize

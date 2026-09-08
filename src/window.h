@@ -7,6 +7,7 @@ class QPushButton;
 class QLabel;
 class QSlider;
 class QComboBox;
+class QButtonGroup;
 class QCheckBox;
 class QSystemTrayIcon;
 class QAction;
@@ -20,6 +21,7 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 private:
     void toggle();
+    void chooseExit();
     void pause();
     void syncState();
     void updateConfig();
@@ -28,9 +30,9 @@ private:
     std::unique_ptr<Backend> backend;
     QSettings settings;
     QPushButton *toggleButton;
-    QLabel *status, *notice, *strengthValue, *speedValue, *centerHelp, *centerWindowValue, *presetValue;
+    QLabel *status, *notice, *strengthValue, *speedValue, *centerHelp, *centerWindowValue;
     QSlider *strength, *speed, *centerWindow;
-    QComboBox *centerMethod;
+    QButtonGroup *centerMethod;
     QWidget *centerWindowControls;
     QComboBox *device = nullptr;
     QCheckBox *login;
