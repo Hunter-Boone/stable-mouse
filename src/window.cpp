@@ -2,6 +2,7 @@
 #include "window.h"
 #include "practice.h"
 #include "startup.h"
+#include "scroll_safe_controls.h"
 #include <QApplication>
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -13,6 +14,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScreen>
 #include <QShortcut>
 #include <QSignalBlocker>
 #include <QSlider>
@@ -33,12 +35,58 @@ QIcon appIcon() {
 }
 }
 Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode) : backend(std::move(input)) {
-    setWindowTitle("Stable Mouse"); setWindowIcon(appIcon()); resize(620, 780);
+    setWindowTitle("Stable Mouse"); setWindowIcon(appIcon());
+    const auto available = screen()->availableGeometry().size();
+    resize(std::min(700, available.width() - 40), std::min(860, available.height() - 80));
     auto readable = this->font(); readable.setPointSize(std::max(12, readable.pointSize())); setFont(readable);
-    setStyleSheet("QPushButton, QComboBox { min-height: 44px; padding: 3px 10px; } QCheckBox { min-height: 44px; } QSlider { min-height: 40px; } QTabBar::tab { min-height: 36px; padding: 4px 16px; }");
+    // A complete palette keeps native menus and checkbox glyphs readable too.
+    QPalette colors = palette();
+    colors.setColor(QPalette::Window, QColor("#faf9f3"));
+    colors.setColor(QPalette::WindowText, QColor("#213e35"));
+    colors.setColor(QPalette::Base, QColor("#fffef9"));
+    colors.setColor(QPalette::AlternateBase, QColor("#eaf0e5"));
+    colors.setColor(QPalette::Text, QColor("#213e35"));
+    colors.setColor(QPalette::Button, QColor("#fffef9"));
+    colors.setColor(QPalette::ButtonText, QColor("#213e35"));
+    colors.setColor(QPalette::Highlight, QColor("#185e53"));
+    colors.setColor(QPalette::HighlightedText, Qt::white);
+    setPalette(colors);
+    setStyleSheet(R"(
+        QWidget { font-size: 12pt; }
+        QMainWindow, QScrollArea, QTabWidget::pane, QWidget#settingsPage { background: #faf9f3; }
+        QLabel { color: #213e35; background: transparent; }
+        QLabel#title { font-size: 25pt; font-weight: bold; }
+        QLabel#status { background: #eaf0e5; color: #185e53; padding: 12px; border-radius: 8px; font-weight: bold; }
+        QLabel#notice { background: #f0eddf; padding: 12px; border-radius: 8px; }
+        QPushButton, QComboBox { min-height: 44px; padding: 4px 14px; border: 1px solid #8ba598; border-radius: 7px; background: #fffef9; color: #213e35; }
+        QPushButton:hover, QComboBox:hover { background: #eaf0e5; border-color: #185e53; }
+        QComboBox::drop-down { width: 30px; border: none; }
+        QPushButton:checked, QPushButton#toggle { background: #185e53; color: white; border-color: #185e53; font-weight: bold; }
+        QPushButton#toggle:hover, QPushButton:checked:hover { background: #124a42; }
+        QPushButton:focus, QComboBox:focus, QCheckBox:focus { border: 3px solid #a74d22; }
+        QPushButton#moreOptions { background: #eaf0e5; color: #185e53; font-weight: bold; }
+        QPushButton#quit { border: none; background: transparent; text-decoration: underline; }
+        QGroupBox { background: #fffef9; border: 1px solid #d7ddd2; border-radius: 10px; margin-top: 12px; padding: 18px 12px 12px; }
+        QGroupBox::title { subcontrol-origin: margin; left: 16px; color: #185e53; }
+        QCheckBox { min-height: 44px; spacing: 12px; color: #213e35; border: 3px solid transparent; }
+        QCheckBox::indicator { width: 24px; height: 24px; }
+        QSlider { min-height: 44px; background: transparent; }
+        QSlider::groove:horizontal { height: 8px; background: #d7ddd2; border-radius: 4px; }
+        QSlider::sub-page:horizontal { background: #185e53; border-radius: 4px; }
+        QSlider::handle:horizontal { width: 28px; margin: -11px 0; background: #185e53; border: 2px solid #fffef9; border-radius: 15px; }
+        QSlider::handle:horizontal:focus { border: 3px solid #a74d22; }
+        QTabWidget::pane { border: none; border-top: 1px solid #d7ddd2; }
+        QTabBar::tab { min-height: 40px; padding: 4px 20px; color: #53675d; border-bottom: 3px solid transparent; }
+        QTabBar::tab:selected { color: #185e53; border-bottom: 3px solid #185e53; font-weight: bold; }
+        QTabBar::tab:focus { border: 2px solid #a74d22; }
+        QScrollBar:vertical { background: #eaf0e5; width: 20px; margin: 0; }
+        QScrollBar::handle:vertical { background: #8ba598; min-height: 48px; border: 4px solid #eaf0e5; border-radius: 9px; }
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
+    )");
     auto *root = new QWidget; auto *layout = new QVBoxLayout(root);
     layout->setContentsMargins(24, 20, 24, 20); layout->setSpacing(14);
-    auto *title = copy("Stable Mouse"); auto font = title->font(); font.setPointSize(25); font.setBold(true); title->setFont(font);
+    auto *title = copy("Stable Mouse"); title->setObjectName("title"); auto font = title->font(); font.setPointSize(25); font.setBold(true); title->setFont(font);
     layout->addWidget(title);
     status = copy("Paused"); status->setObjectName("status"); font.setPointSize(15); status->setFont(font); layout->addWidget(status);
     toggleButton = new QPushButton("Turn smoothing on"); toggleButton->setObjectName("toggle"); toggleButton->setMinimumHeight(52);
@@ -46,7 +94,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     layout->addWidget(copy(backend->escapeHint()));
     notice = copy(""); notice->setObjectName("notice"); notice->hide(); layout->addWidget(notice);
     auto *tabs = new QTabWidget; layout->addWidget(tabs, 1);
-    auto *controls = new QWidget; auto *controlsLayout = new QVBoxLayout(controls); controlsLayout->setSpacing(12);
+    auto *controls = new QWidget; controls->setObjectName("settingsPage"); auto *controlsLayout = new QVBoxLayout(controls); controlsLayout->setSpacing(16); controlsLayout->setContentsMargins(4, 20, 12, 20);
     auto *smoothingGroup = new QGroupBox("How much smoothing?"); auto *smoothingLayout = new QVBoxLayout(smoothingGroup);
     auto *presets = new QHBoxLayout;
     auto *presetButtons = new QButtonGroup(this); presetButtons->setExclusive(true); presetButtons->setObjectName("presetButtons");
@@ -62,7 +110,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     smoothingLayout->addWidget(copy("More smoothing is steadier, but takes longer to follow your hand."));
     controlsLayout->addWidget(smoothingGroup);
     auto *methodLabel = copy("How to steady movement"); controlsLayout->addWidget(methodLabel);
-    centerMethod = new QComboBox; centerMethod->setObjectName("centerMethod");
+    centerMethod = new ScrollSafeComboBox; centerMethod->setObjectName("centerMethod");
     centerMethod->setAccessibleName("How to steady movement"); methodLabel->setBuddy(centerMethod);
     centerMethod->addItems({"Smoothing only", "Recognize shaking", "Always follow the center"});
     const int savedMode = settings.value("centerMode", settings.value("centerTracking", false).toBool() ? 1 : 0).toInt();
@@ -74,23 +122,25 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     auto *advancedLayout = new QVBoxLayout(advanced); advancedLayout->setContentsMargins(0, 0, 0, 0); advancedLayout->setSpacing(12);
     advanced->hide(); controlsLayout->addWidget(advanced);
     connect(more, &QPushButton::toggled, this, [advanced, more](bool open) { advanced->setVisible(open); more->setText(open ? "Fewer options" : "More options"); });
-    strengthValue = copy(""); advancedLayout->addWidget(strengthValue);
-    strength = new QSlider(Qt::Horizontal); strength->setObjectName("strength"); strength->setRange(0, 100); strength->setPageStep(10);
+    strengthValue = copy(""); advancedLayout->addWidget(copy("Fine tuning"));
+    advancedLayout->addWidget(copy("Drag a slider or use the arrow keys to adjust. Scrolling moves the page without changing your settings."));
+    advancedLayout->addWidget(strengthValue);
+    strength = new ScrollSafeSlider(Qt::Horizontal); strength->setObjectName("strength"); strength->setRange(0, 100); strength->setPageStep(10);
     strength->setAccessibleName("Smoothing strength"); strength->setValue(std::clamp(settings.value("strength", 55).toInt(), 0, 100));
     advancedLayout->addWidget(strength);
     centerWindowControls = new QWidget; auto *windowLayout = new QVBoxLayout(centerWindowControls); windowLayout->setContentsMargins(0,0,0,0);
     centerWindowValue = copy(""); windowLayout->addWidget(centerWindowValue);
-    centerWindow = new QSlider(Qt::Horizontal); centerWindow->setObjectName("centerWindow"); centerWindow->setRange(100,600); centerWindow->setSingleStep(25); centerWindow->setPageStep(50);
+    centerWindow = new ScrollSafeSlider(Qt::Horizontal); centerWindow->setObjectName("centerWindow"); centerWindow->setRange(100,600); centerWindow->setSingleStep(25); centerWindow->setPageStep(50);
     centerWindow->setAccessibleName("Center window, milliseconds"); centerWindow->setValue(std::clamp(settings.value("centerWindow",250).toInt(),100,600));
     windowLayout->addWidget(centerWindow); windowLayout->addWidget(copy("A longer window uses more recent movement to find the center. It can feel steadier, but slower."));
     advancedLayout->addWidget(centerWindowControls);
     speedValue = copy(""); advancedLayout->addWidget(speedValue);
-    speed = new QSlider(Qt::Horizontal); speed->setObjectName("speed"); speed->setRange(25, 200); speed->setPageStep(10);
+    speed = new ScrollSafeSlider(Qt::Horizontal); speed->setObjectName("speed"); speed->setRange(25, 200); speed->setPageStep(10);
     speed->setAccessibleName("Pointer speed, percent"); speed->setValue(std::clamp(settings.value("speed", 100).toInt(), 25, 200)); advancedLayout->addWidget(speed);
     advancedLayout->addWidget(copy("Pointer speed is separate from smoothing. Leave it at 100% to start."));
 #ifdef Q_OS_LINUX
     auto *devices = new QGroupBox("Mouse to stabilize"); auto *deviceLayout = new QVBoxLayout(devices);
-    device = new QComboBox; device->setAccessibleName("Mouse to stabilize");
+    device = new ScrollSafeComboBox; device->setAccessibleName("Mouse to stabilize");
     auto *deviceRow = new QHBoxLayout; deviceRow->addWidget(device, 1); deviceLayout->addLayout(deviceRow);
     auto *refresh = new QPushButton("Refresh"); refresh->setAccessibleName("Refresh mice"); deviceRow->addWidget(refresh);
     connect(refresh, &QPushButton::clicked, this, &Window::refreshDevices);
@@ -114,7 +164,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     aboutLayout->addWidget(copy("This preview needs testing on real devices. Smoothing preferences vary. The app does not assess tremor severity or provide medical measurements."));
     aboutLayout->addWidget(copy("Closing the window keeps Stable Mouse in the tray if your desktop supports it. Quit stops filtering and releases the mouse. Turn off “Open when I sign in” before uninstalling."));
     aboutLayout->addStretch(); tabs->addTab(about, "Help");
-    auto *quit = new QPushButton("Quit Stable Mouse"); quit->setMinimumHeight(36); layout->addWidget(quit);
+    auto *quit = new QPushButton("Quit Stable Mouse"); quit->setObjectName("quit"); quit->setMinimumHeight(36); layout->addWidget(quit);
     setCentralWidget(root);
     connect(quit, &QPushButton::clicked, qApp, &QApplication::quit);
     connect(toggleButton, &QPushButton::clicked, this, &Window::toggle);

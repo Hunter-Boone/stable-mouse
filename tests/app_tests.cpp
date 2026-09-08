@@ -7,6 +7,8 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QtTest>
@@ -26,6 +28,44 @@ public:
 class AppTests final : public QObject {
     Q_OBJECT
 private slots:
+    void scrollingDoesNotChangeSettings() {
+        auto fake = std::make_unique<FakeBackend>();
+        Window window(std::move(fake), false, true);
+        window.findChild<QPushButton *>("moreOptions")->click();
+        for (const auto &name : {"strength", "speed", "centerWindow"}) {
+            auto *slider = window.findChild<QSlider *>(name);
+            const int before = slider->value();
+            slider->setFocus();
+            QWheelEvent wheel(QPointF(20,20), slider->mapToGlobal(QPoint(20,20)), QPoint(), QPoint(0,-120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+            QApplication::sendEvent(slider, &wheel);
+            QCOMPARE(slider->value(), before);
+
+            slider->setValue(slider->minimum());
+            QTest::keyClick(slider, Qt::Key_Right);
+            QCOMPARE(slider->value(), slider->minimum() + slider->singleStep());
+        }
+        // A wheel over the actual slider must
+        // actually scroll the surrounding page, not merely leave values alone.
+        window.resize(700, 650);
+        QCoreApplication::processEvents();
+        auto *scroll = window.findChild<QScrollArea *>();
+        auto *strength = window.findChild<QSlider *>("strength");
+        scroll->ensureWidgetVisible(strength);
+        QCoreApplication::processEvents();
+        const int scrollBefore = scroll->verticalScrollBar()->value();
+        const QPoint global = strength->mapToGlobal(strength->rect().center());
+        QWheelEvent pageWheel(strength->rect().center(), global, QPoint(), QPoint(0,-120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+        QApplication::sendEvent(strength, &pageWheel);
+        QVERIFY(scroll->verticalScrollBar()->value() > scrollBefore);
+        if (qEnvironmentVariableIsSet("STABLE_MOUSE_UI_CAPTURE"))
+            QVERIFY(window.grab().save(qEnvironmentVariable("STABLE_MOUSE_UI_CAPTURE")));
+        auto *method = window.findChild<QComboBox *>("centerMethod");
+        method->setCurrentIndex(1); method->setFocus();
+        QWheelEvent wheel(QPointF(20,20), method->mapToGlobal(QPoint(20,20)), QPoint(), QPoint(0,-120), Qt::NoButton, Qt::NoModifier, Qt::NoScrollPhase, false);
+        QApplication::sendEvent(method, &wheel);
+        QCOMPARE(method->currentIndex(), 1);
+
+    }
     void controlsAndPersistence() {
         QTemporaryDir configDir;
         QSettings::setDefaultFormat(QSettings::IniFormat);
