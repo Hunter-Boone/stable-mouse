@@ -61,6 +61,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         QPushButton, QComboBox { min-height: 44px; padding: 4px 14px; border: 1px solid #8ba598; border-radius: 7px; background: #fffef9; color: #213e35; }
         QPushButton:hover, QComboBox:hover { background: #eaf0e5; border-color: #185e53; }
         QComboBox::drop-down { width: 30px; border: none; }
+        QComboBox::down-arrow { image: url(:/icons/chevron.xpm); width: 14px; height: 9px; }
         QPushButton:checked, QPushButton#toggle { background: #185e53; color: white; border-color: #185e53; font-weight: bold; }
         QPushButton#toggle:hover, QPushButton:checked:hover { background: #124a42; }
         QPushButton:focus, QComboBox:focus, QCheckBox:focus { border: 3px solid #a74d22; }

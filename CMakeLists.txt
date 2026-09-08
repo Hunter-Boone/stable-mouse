@@ -29,7 +29,9 @@ if(STABLE_MOUSE_CORE_ONLY)
 endif()
 find_package(Qt6 6.4 REQUIRED COMPONENTS Widgets Network Test)
 qt_standard_project_setup()
+qt_add_resources(STABLE_MOUSE_UI_RESOURCES src/ui.qrc)
 qt_add_executable(stable-mouse WIN32 MACOSX_BUNDLE
+  ${STABLE_MOUSE_UI_RESOURCES}
   src/main.cpp src/window.cpp src/window.h src/practice.cpp src/practice.h
   src/startup.cpp src/startup.h src/backend.h)
 target_link_libraries(stable-mouse PRIVATE stabilizer Qt6::Widgets Qt6::Network)
@@ -73,7 +75,7 @@ if(WIN32)
   include(InstallRequiredSystemLibraries)
 endif()
 if(BUILD_TESTING)
-  qt_add_executable(app_tests tests/app_tests.cpp src/startup.cpp src/practice.cpp src/practice.h src/window.cpp src/window.h src/backend.h)
+  qt_add_executable(app_tests tests/app_tests.cpp src/startup.cpp src/practice.cpp src/practice.h src/window.cpp src/window.h src/backend.h ${STABLE_MOUSE_UI_RESOURCES})
   target_link_libraries(app_tests PRIVATE stabilizer Qt6::Widgets Qt6::Test)
   add_test(NAME app COMMAND app_tests)
   set_tests_properties(app PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
