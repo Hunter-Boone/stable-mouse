@@ -10,8 +10,10 @@ Tests with a fake backend verify UI behavior only. They do not validate OS mouse
 - All three CTest entries passed: filter, app controls/persistence/practice, and application smoke launch.
 - Synthetic 8 Hz, 8-unit oscillation at 125 samples/second: RMS fell from 5.657 to 1.383 with Balanced and 0.941 with Strong. These numbers describe a generated test path, not measured hand tremor.
 - Opened the app offscreen and inspected its rendered window. Generated a `.deb` and inspected its executable, helper, desktop entry, and dependency metadata.
+- Opened the actual app under Xvfb with the X11 Qt platform plugin. Tested single-instance handoff and restart after process termination with isolated settings.
+- Extracted the Debian package and launched its executable. Confirmed package directory permissions are 0755 after packaging outside the NAS workspace.
 - Physical Linux filtering is untested. This environment has no `uinput` device or available kernel module.
-- Windows and macOS builds and hardware checks are pending.
+- GitHub Actions built and passed all three CTest entries on Windows Server 2022, macOS 14, and Ubuntu 24.04. Native installer launch checks are being added; physical-device checks remain pending.
 
 ## Hardware release checklist
 

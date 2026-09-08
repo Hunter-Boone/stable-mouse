@@ -7,7 +7,7 @@
 5. For macOS public distribution, sign the application and its bundled frameworks with a Developer ID, enable the hardened runtime, notarize the disk image, and staple the ticket. Check Accessibility permission using the final signed app. Signing credentials must be configured separately.
 6. Publish installer files, SHA-256 checksums, release notes with actual support limits, and the matching source archive. Include Qt license notices and corresponding source obligations for the exact Qt build distributed. Qt is dynamically linked under its open source terms; its source is separate from this application's source archive.
 
-This repository does not include a public download site, signing credentials, or a hosted source repository. The workflow uploads artifacts without creating a public release. Do not label macOS or Windows as tested until those checks have run.
+Source is hosted at https://github.com/Hunter-Boone/stable-mouse. The workflow uploads artifacts without automatically creating a public release. Signing credentials are not configured. Keep build, packaged-launch, and physical-device test results separate in release notes.
 
 Platform references:
 

@@ -12,6 +12,7 @@ jobs:
       matrix:
         os: [windows-2022, macos-14, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install Linux dependencies
@@ -31,6 +32,36 @@ jobs:
       - name: Package
         working-directory: build
         run: cpack -C Release
+      - name: Verify Windows installer
+        if: runner.os == 'Windows'
+        timeout-minutes: 2
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem build/*.exe | Select-Object -First 1
+          $installRoot = Join-Path $env:RUNNER_TEMP 'stable-mouse-installed'
+          $installed = Start-Process $installer.FullName -ArgumentList @('/S', "/D=$installRoot") -Wait -PassThru
+          if ($installed.ExitCode -ne 0) { throw 'Installer failed' }
+          $env:PATH = ($env:PATH -split ';' | Where-Object { $_ -notmatch '[\\/]Qt[\\/]' }) -join ';'
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          $app = Join-Path $installRoot 'bin/stable-mouse.exe'
+          $process = Start-Process $app -ArgumentList '--smoke-test' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Installed app failed to launch' }
+      - name: Verify macOS disk image
+        if: runner.os == 'macOS'
+        timeout-minutes: 2
+        run: |
+          image_dir="$RUNNER_TEMP/stable-mouse-image"
+          hdiutil attach build/*.dmg -nobrowse -mountpoint "$image_dir"
+          trap 'hdiutil detach "$image_dir"' EXIT
+          QT_QPA_PLATFORM=offscreen "$image_dir/stable-mouse.app/Contents/MacOS/stable-mouse" --smoke-test
+          test -f "$image_dir/stable-mouse.app/Contents/Resources/doc/LICENSE"
+      - name: Verify Debian package
+        if: runner.os == 'Linux'
+        timeout-minutes: 2
+        run: |
+          python3 tests/check_deb.py build/*.deb
+          dpkg-deb -x build/*.deb "$RUNNER_TEMP/stable-mouse-installed"
+          QT_QPA_PLATFORM=offscreen "$RUNNER_TEMP/stable-mouse-installed/usr/bin/stable-mouse" --smoke-test
       - uses: actions/upload-artifact@v4
         with:
           name: stable-mouse-${{ runner.os }}-${{ runner.arch }}-preview
