@@ -75,6 +75,22 @@ jobs:
           $app = Join-Path $installRoot 'bin/stable-mouse.exe'
           $process = Start-Process $app -ArgumentList '--smoke-test' -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw 'Installed app failed to launch' }
+          python tests/check_windows_icon.py $app packaging/stable-mouse.ico
+          if ($LASTEXITCODE -ne 0) { throw 'Installed application icon verification failed' }
+          $shell = New-Object -ComObject WScript.Shell
+          $programFolders = @([Environment]::GetFolderPath('CommonPrograms'), [Environment]::GetFolderPath('Programs'))
+          $matchingShortcuts = 0
+          foreach ($folder in $programFolders) {
+            foreach ($link in Get-ChildItem $folder -Filter 'Stable Mouse.lnk' -Recurse -ErrorAction SilentlyContinue) {
+              $shortcut = $shell.CreateShortcut($link.FullName)
+              if ($shortcut.TargetPath -ine $app.Replace('/', '\')) { continue }
+              $iconTarget = ($shortcut.IconLocation -split ',')[0].Trim('"')
+              if ($iconTarget -and $iconTarget -ine $shortcut.TargetPath) { throw 'Start menu shortcut points to another icon' }
+              $matchingShortcuts++
+            }
+          }
+          if ($matchingShortcuts -eq 0) { throw 'Installed Start menu shortcut is missing' }
+          Write-Output 'PASS: Start menu shortcut resolves to the verified application icon'
       - name: Verify macOS disk image
         if: runner.os == 'macOS'
         timeout-minutes: 2

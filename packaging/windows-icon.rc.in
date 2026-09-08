@@ -1,0 +1,3 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Windows Explorer and Start menu shortcuts read this without launching Qt.
+1 ICON "@CMAKE_CURRENT_SOURCE_DIR@/packaging/stable-mouse.ico"

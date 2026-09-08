@@ -2,9 +2,11 @@
 
 A free native desktop application for adjustable mouse stabilization. Licensed under GPL-3.0-only. No accounts, telemetry, advertising, or movement history.
 
-**Status: 0.1.4 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
+**Status: 0.1.5 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
 
-[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.4) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
+[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.5) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
+
+Version 0.1.5 embeds the existing icon in the Windows app, installer, and uninstaller so Start menu shortcuts display it.
 
 ## Controls
 
