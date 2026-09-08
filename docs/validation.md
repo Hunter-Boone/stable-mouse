@@ -14,6 +14,7 @@ Tests with a fake backend verify UI behavior only. They do not validate OS mouse
 - Extracted the Debian package and launched its executable. Confirmed package directory permissions are 0755 after packaging outside the NAS workspace.
 - Physical Linux filtering is untested. This environment has no `uinput` device or available kernel module.
 - GitHub Actions built and passed the filter, app, and smoke CTest entries on Windows Server 2022, macOS 14, and Ubuntu 24.04. The workflow also checks packaged launches and, on Windows, real hook activation and emergency pause. Physical-device checks remain pending.
+- [Final preview workflow](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34245319581) passed all jobs at source revision `0173c8e3b169445b065bdd727e7ccd66f639aaf7`. Windows ran four CTest entries, installed the NSIS package, and launched the installed app without the build Qt environment. macOS mounted its disk image, launched the packaged app, and verified both arm64 and x86_64 executable slices. Ubuntu checked package contents/permissions and launched the extracted executable.
 
 The Windows native backend test is opt-in with `STABLE_MOUSE_TEST_NATIVE_INPUT=1`. It temporarily installs the actual hook and sends the emergency keyboard shortcut. Run it only on an isolated test desktop. CI enables it; ordinary local CTest runs skip it.
 
