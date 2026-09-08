@@ -25,17 +25,25 @@ public:
     }
     Motion step(double seconds) {
         if (!std::isfinite(seconds) || seconds <= 0) return {};
-        // Larger intentional movements catch up sooner. The strength control
-        // still trades response time for steadiness; it cannot identify intent.
-        const double tau = config_.strength == 0 ? 0 :
-            (0.008 + 0.0014 * config_.strength) /
-            (1 + std::hypot(pending_.x, pending_.y) / 100.0);
-        const double alpha = tau == 0 ? 1 : -std::expm1(-std::min(seconds, 0.1) / tau);
-        Motion out{pending_.x * alpha, pending_.y * alpha};
-        pending_.x -= out.x; pending_.y -= out.y;
+        // Two equal low-pass stages. Do not shorten the time constant based on
+        // movement size: a large tremor must not be mistaken for deliberate motion.
+        // pending_ = target - stage 1; second_ = stage 1 - output.
+        // The exact constant-input solution avoids sample-rate-dependent tuning.
+        if (config_.strength == 0) {
+            Motion out{pending_.x + second_.x, pending_.y + second_.y};
+            pending_ = {}; second_ = {}; return out;
+        }
+        const double tau = 0.012 + 0.000022 * config_.strength * config_.strength;
+        const double h = std::min(seconds, 0.1) / tau;
+        const double decay = std::exp(-h), alpha = -std::expm1(-h);
+        Motion out{second_.x * alpha + pending_.x * (alpha - h * decay),
+                   second_.y * alpha + pending_.y * (alpha - h * decay)};
+        second_ = {(second_.x + pending_.x * h) * decay,
+                   (second_.y + pending_.y * h) * decay};
+        pending_.x *= decay; pending_.y *= decay;
         return out;
     }
-    void reset() { pending_ = {}; fraction_ = {}; }
+    void reset() { pending_ = {}; second_ = {}; fraction_ = {}; }
     // Preserve sub-pixel movement instead of rounding every sample to zero.
     Motion pixels(double seconds) {
         auto m = step(seconds);
@@ -46,5 +54,5 @@ public:
     }
 private:
     FilterConfig config_;
-    Motion pending_, fraction_;
+    Motion pending_, second_, fraction_;
 };

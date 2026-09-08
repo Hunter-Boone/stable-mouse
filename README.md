@@ -60,7 +60,7 @@ The [build workflow](.github/workflows/build.yml) builds and uploads preview ins
 
 ## Filtering
 
-The shared filter accumulates relative input and drains it with a time-based low-pass response. Large pending movements reduce the time constant so long movements catch up faster. Residual motion settles even after input stops. Fractional movement is preserved at low speeds. A button press clears the remaining tail to keep the click at the visible pointer position. Dragging continues to be filtered.
+The shared filter accumulates relative input and passes it through two time-based low-pass stages. Large shakes receive the same proportional filtering as small shakes. Strong smoothing adds more delay; it does not speed up in response to larger movements. Residual motion settles even after input stops. Fractional movement is preserved at low speeds. A button press clears both stages to keep the click at the visible pointer position. Dragging continues to be filtered.
 
 This is a heuristic, not a classifier of intentional motion. Synthetic oscillation tests check attenuation and movement conservation. They cannot establish usability for a person with tremor. OS acceleration and device differences mean the same settings may feel different across platforms.
 

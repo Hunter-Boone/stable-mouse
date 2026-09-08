@@ -87,7 +87,13 @@ private:
         auto *self = current;
         if (code < 0 || !self) return CallNextHookEx(nullptr, code, kind, data);
         auto *event = reinterpret_cast<MSLLHOOKSTRUCT *>(data);
-        if (event->flags & LLMHF_INJECTED) {
+        bool replay = false;
+#ifdef STABLE_MOUSE_TEST_REPLAY
+        // Only the dedicated test executable accepts synthetic test motion.
+        // Production builds keep excluding injected events to prevent feedback.
+        replay = event->dwExtraInfo == 0x53544D54;
+#endif
+        if ((event->flags & LLMHF_INJECTED) && !replay) {
             if (event->dwExtraInfo != tag) self->filter.reset();
             return CallNextHookEx(nullptr, code, kind, data);
         }

@@ -72,6 +72,12 @@ jobs:
           dpkg-deb -x build/*.deb "$RUNNER_TEMP/stable-mouse-installed"
           QT_QPA_PLATFORM=offscreen "$RUNNER_TEMP/stable-mouse-installed/usr/bin/stable-mouse" --smoke-test
       - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: stable-mouse-Windows-test-tools
+          path: build/Release/windows_backend_tests.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
         with:
           name: stable-mouse-${{ runner.os }}-${{ runner.arch }}-preview
           path: |

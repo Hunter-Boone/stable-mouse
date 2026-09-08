@@ -58,7 +58,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     strength = new QSlider(Qt::Horizontal); strength->setObjectName("strength"); strength->setRange(0, 100); strength->setPageStep(10);
     strength->setAccessibleName("Smoothing strength"); strength->setValue(std::clamp(settings.value("strength", 55).toInt(), 0, 100));
     smoothingLayout->addWidget(strength);
-    smoothingLayout->addWidget(copy("More smoothing reduces small changes in movement, but adds delay. Start with Balanced and adjust a little at a time."));
+    smoothingLayout->addWidget(copy("More smoothing steadies repeated shaking, including large shakes, but adds delay. Strong is steadier and takes longer to follow your hand."));
     speedValue = copy(""); smoothingLayout->addWidget(speedValue);
     speed = new QSlider(Qt::Horizontal); speed->setObjectName("speed"); speed->setRange(25, 200); speed->setPageStep(10);
     speed->setAccessibleName("Pointer speed, percent"); speed->setValue(std::clamp(settings.value("speed", 100).toInt(), 25, 200)); smoothingLayout->addWidget(speed);
@@ -83,7 +83,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     auto *clear = new QPushButton("Clear practice area"); practiceLayout->addWidget(clear); connect(clear, &QPushButton::clicked, practice, &Practice::clear);
     tabs->addTab(practicePage, "Practice");
     auto *about = new QWidget; auto *aboutLayout = new QVBoxLayout(about);
-    aboutLayout->addWidget(copy("Stable Mouse 0.1.0 • Preview"));
+    aboutLayout->addWidget(copy("Stable Mouse 0.1.1 • Preview"));
     aboutLayout->addWidget(copy("Free software, licensed under GPL-3.0-only. No account, advertising, analytics, or movement history."));
     aboutLayout->addWidget(copy(backend->instructions()));
     aboutLayout->addWidget(copy("This preview needs testing on real devices. Smoothing preferences vary. The app does not assess tremor severity or provide medical measurements."));
