@@ -2,7 +2,7 @@
 
 A free native desktop application for adjustable mouse stabilization. Licensed under GPL-3.0-only. No accounts, telemetry, advertising, or movement history.
 
-**Status: 0.1.2 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
+**Status: 0.1.3 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
 
 [Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.2-preview.1) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
 
@@ -69,3 +69,19 @@ This is a heuristic, not a classifier of intentional motion. Synthetic oscillati
 See [CONTRIBUTING.md](CONTRIBUTING.md). Contributions are licensed under GPL-3.0-only. Please include the OS version, mouse model, display arrangement, settings, and reproduction steps for input bugs. Do not include medical records or private screen recordings.
 
 Version 0.1.2 adds optional [center tracking](docs/center-tracking.md) for repeated shaking. It is off by default and improves target holding in regular replay tests. It retains smoothing delay and can fall back during irregular movement.
+
+
+### Simple controls, with room to adjust
+
+The main screen has On/Pause, Light/Balanced/Strong presets, and three methods:
+Smoothing only, Recognize shaking, and Always follow the center. **More options**
+contains fine strength adjustment, the 100–600 ms center window for always-center,
+pointer speed, and the two startup switches. It starts closed; settings are kept
+between runs. Existing center-tracking preferences migrate to Recognize shaking.
+The Practice tab and emergency pause controls remain available.
+
+Always follow the center uses the same calculation as the website demo: midpoint
+of the recent movement range, followed by smoothing. It does not wait to recognize
+a pattern. It can add delay, and is not always steadier than Recognize shaking.
+The website uses fixed pointer speed for comparison and keeps movement on clicks;
+the installed app still cancels its remaining drift at a click.

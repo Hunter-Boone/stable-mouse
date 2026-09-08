@@ -10,7 +10,11 @@ int main() {
     std::string operation;
     std::cout << std::setprecision(17);
     while (std::cin >> operation) {
-        if (operation == "config") {
+        if (operation == "always") {
+            FilterConfig c; c.centerTracking=true; c.alwaysCenter=true;
+            std::cin >> c.strength >> c.speed >> c.centerWindow;
+            filter.configure(c);
+        } else if (operation == "config") {
             FilterConfig c;
             std::cin >> c.strength >> c.speed >> c.centerTracking;
             filter.configure(c);

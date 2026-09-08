@@ -3,6 +3,7 @@
 #include "practice.h"
 #include "startup.h"
 #include <QCheckBox>
+#include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QSlider>
@@ -36,12 +37,19 @@ private slots:
             auto *toggle = window.findChild<QPushButton *>("toggle");
             QVERIFY(!input->active());
             QVERIFY(!input->config.centerTracking);
-            window.findChild<QCheckBox *>("centerTracking")->setChecked(true);
+            QVERIFY(!window.findChild<QWidget *>("advancedOptions")->isVisible());
+            window.findChild<QComboBox *>("centerMethod")->setCurrentIndex(2);
+            QVERIFY(input->config.alwaysCenter);
+            auto *more=window.findChild<QPushButton *>("moreOptions");
+            QTest::mouseClick(more,Qt::LeftButton);
+            QVERIFY(window.findChild<QWidget *>("advancedOptions")->isVisible());
+            window.findChild<QSlider *>("centerWindow")->setValue(450);
+            QCOMPARE(input->config.centerWindow,.45);
             QVERIFY(input->config.centerTracking);
             QTest::mouseClick(toggle, Qt::LeftButton); QVERIFY(input->active());
             auto *strength = window.findChild<QSlider *>("strength"); strength->setValue(80); QCOMPARE(input->config.strength, 80.0);
             auto *speed = window.findChild<QSlider *>("speed"); speed->setValue(60); QCOMPARE(input->config.speed, .6);
-            input->emergency(); QVERIFY(!input->active()); QCOMPARE(toggle->text(), QString("Enable stabilization"));
+            input->emergency(); QVERIFY(!input->active()); QCOMPARE(toggle->text(), QString("Turn smoothing on"));
             input->allowStart = false; QTest::mouseClick(toggle, Qt::LeftButton);
             QVERIFY(!input->active()); QCOMPARE(window.findChild<QLabel *>("notice")->text(), QString("Device unavailable"));
             window.findChild<QCheckBox *>("enableOnLaunch")->setChecked(true);
@@ -50,8 +58,22 @@ private slots:
         Window restored(std::move(fake), false, true);
         QCOMPARE(input->config.strength, 80.0); QCOMPARE(input->config.speed, .6);
         QVERIFY(restored.findChild<QCheckBox *>("enableOnLaunch")->isChecked());
-        QVERIFY(input->config.centerTracking);
+        QVERIFY(input->config.centerTracking); QVERIFY(input->config.alwaysCenter);
+        QCOMPARE(input->config.centerWindow,.45);
+        QVERIFY(!restored.findChild<QWidget *>("advancedOptions")->isVisible());
+        restored.findChild<QComboBox *>("centerMethod")->setCurrentIndex(0);
+        QVERIFY(!input->config.centerTracking); QVERIFY(!input->config.alwaysCenter);
         QVERIFY(!input->active()); // Test mode never takes control of the real pointer.
+    }
+    void legacySettings() {
+        QTemporaryDir configDir;
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat,QSettings::UserScope,configDir.path());
+        QCoreApplication::setOrganizationName("StableMouseTests"); QCoreApplication::setApplicationName("Migration");
+        QSettings old; old.setValue("centerTracking",true); old.setValue("strength",85); old.sync();
+        auto fake=std::make_unique<FakeBackend>(); auto *input=fake.get(); Window window(std::move(fake),false,true);
+        QVERIFY(input->config.centerTracking); QVERIFY(!input->config.alwaysCenter); QCOMPARE(input->config.strength,85.);
+        QVERIFY(!window.findChild<QWidget *>("advancedOptions")->isVisible());
     }
     void startupEscaping() {
         const auto contents = Startup::entryContents("/some folder/Mouse & pointer");

@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <future>
+#include <mutex>
 #include <thread>
 #ifdef STABLE_MOUSE_TEST_REPLAY
 #include <iostream>
@@ -18,7 +19,8 @@ public:
         return "Works with the desktop pointer, including dragging. Games that read raw mouse input may bypass stabilization. Windows protects administrator windows from input sent by ordinary apps.";
     }
     QString escapeHint() const override { return "Press Ctrl + Alt + F8 anywhere to pause."; }
-    void configure(FilterConfig c) override { strength.store(c.strength); speed.store(c.speed); centerTracking.store(c.centerTracking); }
+    void configure(FilterConfig c) override { std::lock_guard<std::mutex> lock(configMutex); config = c; }
+    FilterConfig currentConfig() { std::lock_guard<std::mutex> lock(configMutex); return config; }
 #ifdef STABLE_MOUSE_TEST_REPLAY
     bool replayButton(bool down) override {
         return PostThreadMessageW(threadId.load(), WM_APP + 2, down, 0) != 0;
@@ -85,7 +87,7 @@ public:
                 }
                 if (msg.message == WM_TIMER) {
                     const auto now = std::chrono::steady_clock::now();
-                    filter.configure({strength.load(), speed.load(), centerTracking.load()});
+                    filter.configure(currentConfig());
                     auto delta = filter.pixels(std::chrono::duration<double>(now - last).count()); last = now;
                     if (delta.x || delta.y) {
                         POINT p{};
@@ -141,7 +143,7 @@ private:
         if (kind == WM_MOUSEMOVE) {
             POINT position{};
             if (!GetCursorPos(&position)) return CallNextHookEx(nullptr, code, kind, data);
-            self->filter.configure({self->strength.load(), self->speed.load(), self->centerTracking.load()});
+            self->filter.configure(self->currentConfig());
             self->filter.add(double(event->pt.x) - position.x, double(event->pt.y) - position.y);
 #ifdef STABLE_MOUSE_TEST_REPLAY
             if (replay) { self->replaySum += double(event->pt.x) - position.x; ++self->replayCount; }
@@ -156,8 +158,8 @@ private:
     static thread_local WindowsBackend *current;
     std::thread worker;
     std::atomic<DWORD> threadId{0};
-    std::atomic<double> strength{55}, speed{1};
-    std::atomic<bool> centerTracking{false};
+    std::mutex configMutex;
+    FilterConfig config;
     HHOOK hook = nullptr;
     Stabilizer filter;
 #ifdef STABLE_MOUSE_TEST_REPLAY

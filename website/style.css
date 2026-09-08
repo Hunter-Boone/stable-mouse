@@ -757,3 +757,15 @@ footer>div a {
   .demo-presets { margin-top: 12px; }
   .demo-area { height: 330px; }
 }
+
+/* Keep the first view short; fine tuning is available on request. */
+.demo-controls { align-self: start; }
+.demo-controls #demo-center-help { font-size: 16px; line-height: 1.6; margin: 12px 0 20px; }
+.demo-more, .demo-notes { border-top: 1px solid var(--line); }
+.demo-more summary, .demo-notes summary { min-height: 52px; display: flex; align-items: center; font-size: 16px; cursor: pointer; }
+.demo-more p, .demo-more label { font-size: 15px !important; }
+.demo-more { grid-column: 1 / -1; }
+.demo-notes { margin-top: 24px; }
+.demo-notes .demo-limits { margin-top: 0; font-size: 15px; }
+.demo-presets button { font-size: 14px; }
+@media (max-width: 900px) { .demo-controls #demo-center-help { grid-column: 1 / -1; } }

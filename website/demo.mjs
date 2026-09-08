@@ -6,7 +6,6 @@ const area = section.querySelector('.demo-area');
 const ghost = section.querySelector('.demo-cursor');
 const mark = section.querySelector('.demo-click');
 const strength = section.querySelector('#demo-strength');
-const center = section.querySelector('#demo-center');
 const method = section.querySelector('#demo-center-method');
 const centerWindow = section.querySelector('#demo-center-window');
 const centerHelp = section.querySelector('#demo-center-help');
@@ -21,7 +20,7 @@ let width = 0, height = 0;
 const clamp = (v, max) => Math.max(0, Math.min(max, v));
 function showCenterStatus() {
   const axes = mode === 'always' ? [] : [filter.centerX.locked && 'horizontal', filter.centerY.locked && 'vertical'].filter(Boolean);
-  const message = !center.checked ? 'Center tracking is off.'
+  const message = mode === 'off' ? 'Center tracking is off.'
     : !enabled ? 'Center tracking is paused.'
     : Number(strength.value) === 0 ? 'Increase smoothing strength to use center tracking.'
     : mode === 'always' ? 'Always estimating the center, then smoothing.'
@@ -82,13 +81,13 @@ function move(event) {
   if (!enabled) paint();
 }
 function configure() {
-  const nextMode = center.checked ? method.value : 'off';
+  const nextMode = method.value;
   if (nextMode !== mode) {
     leave();
     filter = nextMode === 'always' ? new AlwaysCenter() : new Stabilizer();
     mode = nextMode;
   }
-  filter.configure({ strength: Number(strength.value), speed: 1, centerTracking: center.checked,
+  filter.configure({ strength: Number(strength.value), speed: 1, centerTracking: mode !== 'off',
     windowSeconds: Number(centerWindow.value) / 1000 });
   section.querySelector('#demo-strength-value').textContent = `${strength.value}%`;
   status.textContent = enabled ? 'Demo smoothing is on' : 'Paused · Both cursors move together';
@@ -96,9 +95,9 @@ function configure() {
   toggle.setAttribute('aria-pressed', String(enabled));
   section.querySelector('.demo-window-control').hidden = method.value !== 'always';
   section.querySelector('#demo-center-window-value').textContent = `${centerWindow.value} ms`;
-  centerHelp.textContent = method.value === 'always'
-    ? 'Browser experiment: take the midpoint of the recent movement range, then smooth it. A longer center window can steady the pointer more, but delays deliberate movement too.'
-    : 'More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.';
+  centerHelp.textContent = mode === 'off' ? 'Softens all mouse movement.'
+    : mode === 'always' ? 'Follows the center of recent movement. This can feel steadier, but slower.'
+    : 'Looks for back-and-forth shaking before following its center.';
   showCenterStatus();
 }
 area.addEventListener('pointerenter', enter);
@@ -112,8 +111,8 @@ area.addEventListener('pointerdown', event => {
   // the desktop app's click-tail cancellation policy.
   mark.style.transform = `translate(${output.x}px, ${output.y}px)`; mark.hidden = false;
 });
-for (const control of [strength, center]) control.addEventListener('input', configure);
-method.addEventListener('change', () => { center.checked = true; configure(); });
+for (const control of [strength]) control.addEventListener('input', configure);
+method.addEventListener('change', configure);
 centerWindow.addEventListener('input', () => { leave(); configure(); });
 section.querySelectorAll('[data-strength]').forEach(button => button.addEventListener('click', () => {
   strength.value = button.dataset.strength; configure();

@@ -28,10 +28,12 @@ private:
     std::unique_ptr<Backend> backend;
     QSettings settings;
     QPushButton *toggleButton;
-    QLabel *status, *notice, *strengthValue, *speedValue;
-    QSlider *strength, *speed;
+    QLabel *status, *notice, *strengthValue, *speedValue, *centerHelp, *centerWindowValue, *presetValue;
+    QSlider *strength, *speed, *centerWindow;
+    QComboBox *centerMethod;
+    QWidget *centerWindowControls;
     QComboBox *device = nullptr;
-    QCheckBox *login, *centerTracking;
+    QCheckBox *login;
     QSystemTrayIcon *tray = nullptr;
     QAction *trayToggle = nullptr;
     bool starting = false;

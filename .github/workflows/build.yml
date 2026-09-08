@@ -38,6 +38,11 @@ jobs:
           STABLE_MOUSE_TEST_NATIVE_INPUT: '1'
           STABLE_MOUSE_TEST_CENTER: '1'
         run: ctest --test-dir build -C Release --output-on-failure
+      - name: Capture Windows interface
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & build/Release/stable-mouse.exe --screenshot "$env:RUNNER_TEMP/stable-mouse-interface.png"
       - name: Package
         working-directory: build
         run: cpack -C Release
@@ -82,6 +87,7 @@ jobs:
             build/Release/windows_backend_tests.exe
             build/Release/windows_focus_tests.exe
             build/Testing/Temporary/LastTest.log
+            ${{ runner.temp }}/stable-mouse-interface.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:

@@ -62,25 +62,29 @@
     <noscript><p>The interactive demo needs JavaScript. Downloads and the rest of this page work without it.</p></noscript>
     <div class="demo-layout">
       <fieldset class="demo-controls" disabled>
-        <legend>Demo pointer settings</legend>
+        <legend>Try your settings</legend>
         <button id="demo-toggle" class="button primary" type="button" aria-pressed="true">Pause smoothing</button>
         <p id="demo-status" class="small" role="status">Demo smoothing is on</p>
         <div class="demo-presets" role="group" aria-label="Smoothing presets"><button type="button" data-strength="25">Light</button><button type="button" data-strength="55">Balanced</button><button type="button" data-strength="85">Strong</button></div>
-        <label for="demo-strength">Smoothing strength <output id="demo-strength-value" for="demo-strength">55%</output></label>
-        <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
-        <label class="demo-check" for="demo-center"><input id="demo-center" type="checkbox">Track the center of movement <span class="small">Preview</span></label>
-        <label for="demo-center-method">Center method</label>
+        <label for="demo-center-method">How to steady movement</label>
         <select id="demo-center-method" aria-describedby="demo-center-help">
+          <option value="off">Smoothing only</option>
           <option value="detected">Recognize shaking</option>
-          <option value="always">Always track center · experiment</option>
+          <option value="always">Always follow the center</option>
         </select>
-        <div class="demo-window-control" hidden>
-          <label for="demo-center-window">Center window <output id="demo-center-window-value" for="demo-center-window">250 ms</output></label>
-          <input id="demo-center-window" type="range" min="100" max="600" value="250" step="25">
-        </div>
-        <p id="demo-center-status" class="small" role="status">Center tracking is off.</p>
-        <p id="demo-center-help" class="small">More smoothing adds delay. Center tracking allows uneven back-and-forth movement, but needs several reversals to engage. Very small movements use ordinary smoothing.</p>
-        <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
+        <p id="demo-center-help">Softens all mouse movement.</p>
+        <details class="demo-more">
+          <summary>More options</summary>
+          <label for="demo-strength">Smoothing strength <output id="demo-strength-value" for="demo-strength">55%</output></label>
+          <input id="demo-strength" type="range" min="0" max="100" value="55" step="1">
+          <div class="demo-window-control" hidden>
+            <label for="demo-center-window">Center window <output id="demo-center-window-value" for="demo-center-window">250 ms</output></label>
+            <input id="demo-center-window" type="range" min="100" max="600" value="250" step="25">
+            <p>A longer window can feel steadier, but takes longer to follow your hand.</p>
+          </div>
+          <p id="demo-center-status" role="status">Center tracking is off.</p>
+          <button id="demo-reset" class="button secondary" type="button">Reset practice area</button>
+        </details>
       </fieldset>
       <div class="demo-workspace">
         <div class="demo-area" role="group" aria-label="Cursor comparison practice area" aria-describedby="demo-instructions" tabindex="0">
@@ -91,10 +95,12 @@
           <div class="demo-click" hidden aria-hidden="true"></div>
           <svg class="demo-cursor" hidden aria-hidden="true" width="28" height="36" viewBox="0 0 28 36"><path d="M1 1v27l7-7 7 13 7-4-7-13 11-1z" fill="#185e53" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
         </div>
-        <p id="demo-instructions" class="small">Try holding the teal pointer over a target. Click to mark its position; clicking and dragging keep movement continuous. Both cursors use the same movement scale and settle together after you stop, unless the teal cursor has reached an edge. Move out and back in to align them again. Escape pauses the demo while this section has focus.</p>
+        <p id="demo-instructions">Move around and try holding the teal pointer over each circle. Click to leave a mark. Move out and back in to line the cursors up again.</p>
       </div>
     </div>
-    <p class="demo-limits">If Stable Mouse is already running, pause it first for an unfiltered comparison. This demo uses the app’s development filter with more tolerant center recognition than the 0.1.2 download. Averaging uneven swings can add delay when you reach while shaking. Browser timing, display scaling, and operating-system input handling can also make the desktop app feel different. The desktop app cancels residual movement on clicks; this comparison keeps it so clicking does not leave the cursors offset. It never hides, locks, or moves your real cursor. Nothing you do here is saved or uploaded. Use a mouse, trackpad, or pen; touch scrolling stays normal.</p>
+    <details class="demo-notes"><summary>About this preview</summary>
+      <p class="demo-limits">Pause the desktop app first if it is running. The demo uses the same movement scale as your real cursor. Smoothing adds delay, and reaching an edge can leave the cursors apart. Escape pauses the demo while this section has focus. Your real cursor stays under your control. No movement is saved or uploaded. Browser timing and display scaling can feel different from the app. The app stops remaining drift when you click; the demo keeps that movement so clicks do not leave its two cursors offset.</p>
+    </details>
   </section>
   <section class="preview-note wrap" aria-labelledby="preview-title"><div><span class="pill">DEVELOPMENT PREVIEW</span><h2 id="preview-title">Helpful is something we have to test.</h2></div><div><p>This is an early version. Controlled tests show better target holding during regular shaking, but it still adds lag and can struggle with irregular movement. It has not been clinically validated.</p><p>Windows has been tested on a workstation with generated input. macOS and Linux builds pass automated checks; physical input testing on those platforms is still pending.</p><a class="text-link" href="https://github.com/Hunter-Boone/stable-mouse/blob/main/docs/center-tracking.md">Read the tests and limitations <span aria-hidden="true">↗</span></a></div></section>
   <section id="downloads" class="section downloads wrap" aria-labelledby="download-title">

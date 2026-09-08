@@ -43,7 +43,7 @@ bool replayShake(Backend &backend, const scenarios::Scenario &scenario, ReplayVi
     } restore{backend, original};
     const POINT center{GetSystemMetrics(SM_CXSCREEN) / 2, GetSystemMetrics(SM_CYSCREEN) / 2};
     SetCursorPos(center.x, center.y);
-    backend.configure({85, 1, qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_CENTER")});
+    backend.configure({85, 1, qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_CENTER"), qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_ALWAYS"), .25});
     if (!backend.start({})) return false;
     view.scenario = QString(scenario.name) + (qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_CENTER") ? " | center tracking on" : "");
     QEventLoop loop; QTimer timer; QElapsedTimer elapsed;
@@ -83,7 +83,7 @@ bool clickAndDrag(Backend &backend, ReplayView &view) {
         POINT p{};return GetCursorPos(&p) && GetAncestor(WindowFromPoint(p),GA_ROOT)==reinterpret_cast<HWND>(view.winId());
     };
     if (!inside()) { SetCursorPos(original.x,original.y); return false; }
-    backend.configure({85,1,true});
+    backend.configure({85,1,true,qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_ALWAYS"),.25});
     if (!backend.start({})) { SetCursorPos(original.x,original.y);return false; }
     bool ok = backend.replayMotion(80,0);pump(40);
     ok = ok && inside();

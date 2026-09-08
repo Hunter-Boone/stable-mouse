@@ -30,8 +30,8 @@ await send('Input.dispatchMouseEvent',{type:'mouseMoved',x:rect.x+540,y:rect.y+2
 await mouse(540,260,'mouseReleased');await wait(1100);s=await state();
 assert.ok(Math.abs(s.x-540)<=1 && Math.abs(s.y-260)<=1, `Drag lost movement: ${JSON.stringify(s)}`);
 await mouse(-10,-10);assert.equal((await state()).hidden,true);await mouse(110,90);s=await state();assert.equal(s.x,110);assert.equal(s.y,90);
-await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('#demo-center').click()");
-assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('#demo-center').checked"),true);
+await evaluate("document.querySelector('[data-strength=\"85\"]').click();document.querySelector('#demo-center-method').value='detected';document.querySelector('#demo-center-method').dispatchEvent(new Event('change'))");
+assert.equal(await evaluate("document.querySelector('#demo-strength-value').textContent"),'85%');assert.equal(await evaluate("document.querySelector('#demo-center-method').value"),'detected');
 await evaluate("document.querySelector('#demo-toggle').click()");await mouse(140,160);await mouse(230,250);s=await state();assert.equal(s.x,230);assert.equal(s.y,250);
 // Reset and keyboard pause.
 await evaluate("document.querySelector('#demo-reset').click()");assert.equal((await state()).mark,false);
@@ -41,6 +41,11 @@ await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape',win
 assert.equal(await evaluate("document.querySelector('#demo-toggle').getAttribute('aria-pressed')"),'false');
 // Demo speed is fixed; the smoothing slider still supports keyboard operation.
 assert.equal(await evaluate("document.querySelector('#demo-speed')"),null);
+assert.equal(await evaluate("document.querySelector('.demo-more').open"),false);
+await evaluate("document.querySelector('.demo-more summary').focus()");
+await send('Input.dispatchKeyEvent',{type:'keyDown',text:'\r',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+await send('Input.dispatchKeyEvent',{type:'keyUp',key:'Enter',code:'Enter',windowsVirtualKeyCode:13});
+assert.equal(await evaluate("document.querySelector('.demo-more').open"),true);
 await evaluate("document.querySelector('#demo-strength').focus()");
 await send('Input.dispatchKeyEvent',{type:'keyDown',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
 await send('Input.dispatchKeyEvent',{type:'keyUp',key:'ArrowRight',code:'ArrowRight',windowsVirtualKeyCode:39});
@@ -73,7 +78,7 @@ await send('Page.reload', {ignoreCache: true});await wait(1500);
 await send('Page.removeScriptToEvaluateOnNewDocument', {identifier: clockScript});
 const comparison = await evaluate(`(() => {
   const area = document.querySelector('.demo-area');
-  const center = document.querySelector('#demo-center');
+  const center = document.querySelector('#demo-center-method');
   const label = document.querySelector('#demo-center-status');
   const rect = area.getBoundingClientRect();
   const pointer = (type, x) => area.dispatchEvent(new PointerEvent(type, {
@@ -84,7 +89,7 @@ const comparison = await evaluate(`(() => {
   const results = [];
   for (const pattern of ['regular', 'uneven']) for (const checked of [false, true]) {
     pointer('pointerleave', 0);
-    center.checked = checked; center.dispatchEvent(new Event('input'));
+    center.value = checked ? 'detected' : 'off'; center.dispatchEvent(new Event('change'));
     pointer('pointerenter', 0);
     const positions = []; let recognized = false;
     let seed = 937, time = 0, duration = .125, from = 0, to = 65;
@@ -131,6 +136,7 @@ const experiment = await evaluate(`(() => {
   const area = document.querySelector('.demo-area');
   const method = document.querySelector('#demo-center-method');
   const windowInput = document.querySelector('#demo-center-window');
+  document.querySelector('.demo-more').open=true;
   const rect = area.getBoundingClientRect();
   const pointer = (type, x, y) => area.dispatchEvent(new PointerEvent(type, {
     pointerType:'mouse', clientX:rect.left+x, clientY:rect.top+y, bubbles:true,
@@ -143,7 +149,7 @@ const experiment = await evaluate(`(() => {
   pointer('pointermove',240,160); pointer('pointerup',240,160);
   for(let i=0;i<500;i++){window.demoTestClock.now+=8;window.demoTestClock.tick();}
   const transform=new DOMMatrix(getComputedStyle(document.querySelector('.demo-cursor')).transform);
-  const enabled=document.querySelector('#demo-center').checked;
+  const enabled=document.querySelector('#demo-center-method').value==='always';
   const visible=!document.querySelector('.demo-window-control').hidden;
   windowInput.value='500';windowInput.dispatchEvent(new Event('input'));
   const label=document.querySelector('#demo-center-window-value').textContent;

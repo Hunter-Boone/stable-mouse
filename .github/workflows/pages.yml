@@ -2,9 +2,9 @@ name: Publish website
 on:
   push:
     branches: [main]
-    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'tests/web/**', 'tests/variance_tests.cpp', '.github/workflows/pages.yml']
+    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'src/always_center.h', 'tests/web/**', 'tests/variance_tests.cpp', '.github/workflows/pages.yml']
   pull_request:
-    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'tests/web/**', 'tests/variance_tests.cpp', '.github/workflows/pages.yml']
+    paths: ['website/**', 'src/filter.h', 'src/center_tracker.h', 'src/always_center.h', 'tests/web/**', 'tests/variance_tests.cpp', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -25,6 +25,7 @@ jobs:
         run: |
           g++ -std=c++17 -Isrc tests/web/filter_reference.cpp -o /tmp/filter-reference
           node tests/web/check-parity.mjs /tmp/filter-reference
+          node tests/web/check-always-parity.mjs /tmp/filter-reference
           g++ -std=c++17 -Isrc tests/variance_tests.cpp -o /tmp/variance-tests
           /tmp/variance-tests
           node tests/web/check-always-center.mjs

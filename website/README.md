@@ -46,8 +46,8 @@ center tracking on and off, verifies recognition, and checks that it returns to
 ordinary smoothing after movement stops. This is a generated input test, not a
 measurement of how well it handles a person's tremor.
 
-The development filter tolerates more variation than release 0.1.2. Keep that
-distinction visible until installers containing the updated detector are released.
+Release 0.1.3 brings the tolerant detector and always-center mode to the app.
+The browser fixes speed at 100% and marks clicks without cancelling movement.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 
@@ -58,9 +58,9 @@ limitations accurate. Do not present generated cursor tests as clinical results.
 
 ## Always-center experiment
 
-Choose **Always track center** under Center method in the browser demo. Selecting
-it enables center tracking. Uncheck Track the center of movement to compare with
-ordinary smoothing, or choose Recognize shaking to use the development detector.
+Choose **Always follow the center** under **How to steady movement**. Choose
+**Smoothing only** or **Recognize shaking** to compare. Fine tuning is under
+**More options**, which starts closed.
 
 `always-center.mjs` takes the midpoint of the minimum and maximum recent positions
 on each axis and passes changes in that midpoint through the app's ordinary
@@ -68,7 +68,7 @@ smoother. It runs continuously without recognition thresholds. The center window
 is adjustable from 100 to 600 ms, starting at 250 ms. Stationary samples expire old
 extrema too, so deliberate travel and small corrections reach their destination.
 Changing the method or window resets the comparison. Zero strength bypasses both
-centering and smoothing. This mode is a browser experiment, not an app feature.
+centering and smoothing. The same mode is included in the 0.1.3 app source and checked against the browser.
 
 Run `node tests/web/check-always-center.mjs` for the algorithm checks. With Balanced
 55%, a 250 ms window, and the test's generated uneven movement, RMS was 13.64px for
