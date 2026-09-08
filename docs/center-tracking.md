@@ -107,11 +107,11 @@ copy passed a launch check and its actual window was inspected, paused with cent
 tracking selected. The downloadable installer already contained that folder and
 had passed its installation-and-launch check.
 
-## Development update: uneven reversals
+## 0.1.3: uneven reversals
 
-The browser demo and current app source now use a more tolerant detector. The
-published 0.1.2 installers still use the earlier rules; the website identifies
-this difference. This update does not change the ordinary smoothing setting.
+The browser demo and 0.1.3 app use a more tolerant detector. The earlier 0.1.2
+installers used the stricter rules below. This update does not change ordinary
+smoothing.
 
 The old detector required three consecutive supporting reversals. Each new
 half-cycle had to be 70–130% as long as the last, and the change in successive
@@ -159,3 +159,28 @@ with ongoing shaking scenario, RMS increased from ordinary smoothing's 49.50 to
 was 100%. A clean reach remains identical to ordinary smoothing. These generated
 results are not clinical validation, and native workstation testing of this
 update remains pending.
+
+
+## 0.1.3: always-center and simpler controls
+
+The app includes the browser's always-center method with its 100–600 ms window.
+It continuously finds the midpoint of the recent position range on each axis,
+then applies the ordinary smoother. Old positions expire even after movement
+stops. There is no recognition gate in this mode. More options contains the time
+window and fine strength settings, plus the app's speed and startup settings.
+Existing center-tracking settings migrate to Recognize shaking.
+
+The native implementation matched the browser across 256,446 generated output
+pairs, including fractional speed, bypass, configuration changes, and reset. Build
+[104be54](https://github.com/Hunter-Boone/stable-mouse/actions/runs/34268372745)
+passed Windows, macOS, Ubuntu, and packaged-launch checks. A Debian 12 package was
+also inspected and launched locally. Both center modes passed Windows generated
+input, click/drag, restart, and emergency-pause checks. The new mode remains
+untested with a physical mouse on the user's workstation.
+
+Always-center is not uniformly better. At Strong 85% with a 250 ms window, the
+Windows CI irregular case had 45.0% final target dwell with always-center versus
+20.7% with recognition. The slow 1 Hz case had only 8.8% dwell with always-center
+versus 100% with recognition. The clean reach also had more delay with always-center.
+These are generated tests, not evidence of clinical usefulness. A longer window
+can help slower shaking, with more delay.

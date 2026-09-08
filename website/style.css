@@ -769,3 +769,5 @@ footer>div a {
 .demo-notes .demo-limits { margin-top: 0; font-size: 15px; }
 .demo-presets button { font-size: 14px; }
 @media (max-width: 900px) { .demo-controls #demo-center-help { grid-column: 1 / -1; } }
+
+.demo-presets button[aria-pressed=true] { color: var(--white); background: var(--green); border-color: var(--green); }

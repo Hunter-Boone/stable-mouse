@@ -98,6 +98,9 @@ function configure() {
   centerHelp.textContent = mode === 'off' ? 'Softens all mouse movement.'
     : mode === 'always' ? 'Follows the center of recent movement. This can feel steadier, but slower.'
     : 'Looks for back-and-forth shaking before following its center.';
+  section.querySelectorAll('[data-strength]').forEach(button => {
+    button.setAttribute('aria-pressed', String(Number(button.dataset.strength) === Number(strength.value)));
+  });
   showCenterStatus();
 }
 area.addEventListener('pointerenter', enter);
