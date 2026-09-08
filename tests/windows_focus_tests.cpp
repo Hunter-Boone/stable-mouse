@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Controlled feasibility test only; never linked into the application.
 #include <windows.h>
+#include <objbase.h>
+#include <oleauto.h>
 #include <UIAutomation.h>
 #include <chrono>
 #include <future>
