@@ -55,6 +55,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
           STABLE_MOUSE_TEST_LIVE_UPDATER: '1'
+          STABLE_MOUSE_TEST_GITHUB_TOKEN: ${{ github.token }}
         run: ctest --test-dir build -C Release -R '^updater_live$' --verbose --output-on-failure
       - name: Package
         working-directory: build

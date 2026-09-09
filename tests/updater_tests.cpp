@@ -282,8 +282,20 @@ private slots:
     void livePublishedRelease() {
         if (!qEnvironmentVariableIsSet("STABLE_MOUSE_TEST_LIVE_UPDATER")) QSKIP("Opt-in read-only GitHub integration check");
         QVERIFY2(!suffix().isEmpty(), qPrintable("No packaged updater target for " + QSysInfo::productType() + "/" + QSysInfo::buildCpuArchitecture()));
-        QNetworkAccessManager network;
+        // Hosted runners share anonymous GitHub API limits. This credential is
+        // injected only into this test, and only sent to the GitHub API host.
+        class LiveNetwork final : public QNetworkAccessManager {
+            QNetworkReply *createRequest(Operation op, const QNetworkRequest &original, QIODevice *data) override {
+                auto request = original;
+                const auto token = qgetenv("STABLE_MOUSE_TEST_GITHUB_TOKEN");
+                if (!token.isEmpty() && request.url().scheme() == "https" && request.url().host() == "api.github.com")
+                    request.setRawHeader("Authorization", "Bearer " + token);
+                return QNetworkAccessManager::createRequest(op, request, data);
+            }
+        } network;
         connect(&network, &QNetworkAccessManager::finished, this, [](QNetworkReply *reply) {
+            qInfo() << "HTTP status" << reply->attribute(QNetworkRequest::HttpStatusCodeAttribute)
+                    << "GitHub rate limit remaining" << reply->rawHeader("X-RateLimit-Remaining");
             qInfo() << "Update request" << reply->url().host() << reply->error() << reply->errorString();
         });
         Updater updater(nullptr, &network);
