@@ -59,6 +59,7 @@ jobs:
           STABLE_MOUSE_TEST_GITHUB_TOKEN: ${{ github.token }}
         run: ctest --test-dir build -C Release -R '^updater_live$' --verbose --output-on-failure
       - name: Package
+        id: package
         working-directory: build
         run: cpack -C Release
       - name: Verify Windows installer
@@ -131,6 +132,7 @@ jobs:
             ${{ runner.temp }}/themes/*.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
+        if: always() && steps.package.outcome == 'success'
         with:
           name: stable-mouse-${{ runner.os }}-${{ runner.arch }}-preview
           path: |

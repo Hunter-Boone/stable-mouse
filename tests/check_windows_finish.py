@@ -26,11 +26,29 @@ user.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
 user.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
 user.GetAncestor.restype = wintypes.HWND
 user.SetForegroundWindow.argtypes = [wintypes.HWND]
+user.SetCursorPos.argtypes = [ctypes.c_int, ctypes.c_int]
+
+
+class MouseInput(ctypes.Structure):
+    _fields_ = [('dx', wintypes.LONG), ('dy', wintypes.LONG), ('data', wintypes.DWORD),
+                ('flags', wintypes.DWORD), ('time', wintypes.DWORD), ('extra', ctypes.c_size_t)]
+
+
+class Input(ctypes.Structure):
+    _fields_ = [('kind', wintypes.DWORD), ('mouse', MouseInput)]
+
+
+user.SendInput.argtypes = [wintypes.UINT, ctypes.POINTER(Input), ctypes.c_int]
+user.SendInput.restype = wintypes.UINT
 
 
 def label(hwnd, class_name=False):
     value = ctypes.create_unicode_buffer(2048)
-    (user.GetClassNameW if class_name else user.GetWindowTextW)(hwnd, value, len(value))
+    if class_name:
+        user.GetClassNameW(hwnd, value, len(value))
+    else:
+        # GetWindowText cannot read an edit control in another process.
+        user.SendMessageW(hwnd, 0x000D, len(value), ctypes.cast(value, ctypes.c_void_p).value)
     return value.value.replace('&', '')
 
 
@@ -61,7 +79,12 @@ def wait_for(check, timeout=30):
 def click(hwnd):
     assert user.IsWindowEnabled(hwnd), label(hwnd)
     user.SetForegroundWindow(user.GetAncestor(hwnd, 2))  # GA_ROOT
-    assert user.PostMessageW(hwnd, 0x00F5, 0, 0)  # BM_CLICK, asynchronously
+    rect = wintypes.RECT()
+    assert user.GetWindowRect(hwnd, ctypes.byref(rect))
+    assert user.SetCursorPos((rect.left + rect.right) // 2, (rect.top + rect.bottom) // 2)
+    events = (Input * 2)(Input(0, MouseInput(0, 0, 0, 0x0002, 0, 0)),
+                        Input(0, MouseInput(0, 0, 0, 0x0004, 0, 0)))
+    assert user.SendInput(2, events, ctypes.sizeof(Input)) == 2, ctypes.WinError(ctypes.get_last_error())
     time.sleep(.4)
 
 
@@ -103,8 +126,7 @@ def main():
             while time.monotonic() < deadline:
                 controls = windows(dialog)
                 if any(label(w) == 'Choose Start Menu Folder' for w in controls):
-                    # Fill the folder explicitly, including when a prior silent
-                    # install left the native page's edit control empty.
+                    # Enter a folder if the page does not provide a default.
                     for edit in controls:
                         if label(edit, True) == 'Edit' and not label(edit):
                             folder = ctypes.create_unicode_buffer('Stable Mouse Finish Test')
