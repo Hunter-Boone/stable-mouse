@@ -45,12 +45,12 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
     auto *automatic = new QCheckBox("Check for updates automatically"); automatic->setObjectName("automaticUpdates");
     automatic->setChecked(QSettings().value("updates/automatic", true).toBool()); layout->addWidget(automatic);
     auto *privacy = new QLabel("Checks GitHub at startup and once a day, including preview releases for preview builds. No settings or mouse movement are sent. Downloads and installation start only when you choose.");
-    privacy->setWordWrap(true); layout->addWidget(privacy);
+    privacy->setWordWrap(true); privacy->setObjectName("hint"); layout->addWidget(privacy);
     auto *status = new QLabel; status->setObjectName("updateStatus"); status->setWordWrap(true); status->setTextFormat(Qt::PlainText); layout->addWidget(status);
     auto *progress = new QProgressBar; progress->setObjectName("updateProgress"); progress->setRange(0, 100); layout->addWidget(progress);
-    auto *check = new QPushButton("Check for updates"); check->setObjectName("checkUpdates"); layout->addWidget(check);
-    auto *download = new QPushButton("Download update"); download->setObjectName("downloadUpdate"); layout->addWidget(download);
-    auto *install = installButton = new QPushButton("Install update and close Stable Mouse"); install->setObjectName("installUpdate"); layout->addWidget(install);
+    auto *check = new QPushButton("Check for updates"); check->setObjectName("checkUpdates"); check->setProperty("kind", "secondary"); layout->addWidget(check);
+    auto *download = new QPushButton("Download update"); download->setObjectName("downloadUpdate"); download->setProperty("kind", "primary"); layout->addWidget(download);
+    auto *install = installButton = new QPushButton("Install update and close Stable Mouse"); install->setObjectName("installUpdate"); install->setProperty("kind", "primary"); layout->addWidget(install);
     auto *instructions = new QLabel;
 #ifdef Q_OS_MACOS
     instructions->setText("The disk image will open. Drag Stable Mouse into Applications, replace the old copy, then reopen the app.");
@@ -60,8 +60,9 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
     instructions->setText("The package will open in your software installer. Install it, then reopen Stable Mouse. Your settings will be kept.");
 #endif
     instructions->setWordWrap(true); layout->addWidget(instructions);
-    auto *notes = notesButton = new QPushButton("View release notes and downloads"); notes->setObjectName("updateNotes"); layout->addWidget(notes);
-    auto *cancel = new QPushButton("Cancel update"); cancel->setObjectName("cancelUpdate"); layout->addWidget(cancel);
+    auto *notes = notesButton = new QPushButton("View release notes and downloads  ↗"); notes->setObjectName("updateNotes"); notes->setProperty("kind", "link");
+    notes->setAccessibleName("View release notes and downloads"); layout->addWidget(notes);
+    auto *cancel = new QPushButton("Cancel update"); cancel->setObjectName("cancelUpdate"); cancel->setProperty("kind", "quiet"); layout->addWidget(cancel);
     const auto refresh = [=] {
         const auto state = updater->state();
         const bool busy = state == Updater::State::Checking || state == Updater::State::Downloading;

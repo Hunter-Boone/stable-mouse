@@ -18,6 +18,7 @@
 #include <QRadioButton>
 #include <QDesktopServices>
 #include <QDialog>
+#include <QFrame>
 #include <QUrl>
 #include <QScrollArea>
 #include <QScreen>
@@ -46,7 +47,30 @@ public:
 protected:
     bool hitButton(const QPoint &point) const override { return rect().contains(point); }
 };
-QLabel *copy(const QString &text) { auto *label = new QLabel(text); label->setWordWrap(true); label->setTextFormat(Qt::PlainText); return label; }
+QLabel *copy(const QString &text, const char *role = nullptr) {
+    auto *label = new QLabel(text); label->setWordWrap(true); label->setTextFormat(Qt::PlainText);
+    if (role) label->setObjectName(role);
+    return label;
+}
+// Every button declares what kind of action it is, so the stylesheet can give
+// each kind one consistent look instead of a page of identical rectangles.
+QPushButton *action(const QString &text, const char *kind, const char *name = nullptr) {
+    auto *button = new QPushButton(text); button->setProperty("kind", kind);
+    if (name) button->setObjectName(name);
+    return button;
+}
+// Reading width is capped so controls stay a comfortable size on wide or
+// maximized windows instead of stretching into thin full-width strips.
+QWidget *column(QWidget *content, int maxWidth = 960) {
+    auto *host = new QWidget; host->setObjectName("column");
+    auto *row = new QHBoxLayout(host); row->setContentsMargins(0, 0, 0, 0); row->setSpacing(0);
+    content->setMaximumWidth(maxWidth);
+    content->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    // The content takes all the width it may; only the remainder is split
+    // between the two margins, so the column grows to the cap before centering.
+    row->addStretch(0); row->addWidget(content, 1); row->addStretch(0);
+    return host;
+}
 QIcon appIcon() {
     QPixmap pix(64, 64); pix.fill(Qt::transparent);
     QPainter p(&pix); p.setRenderHint(QPainter::Antialiasing);
@@ -67,29 +91,29 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         if (settings.value("appearance", "system").toString() == "system") applyAppearance();
     });
 #endif
-    auto *root = new QWidget; auto *layout = new QVBoxLayout(root);
-    layout->setContentsMargins(24, 20, 24, 20); layout->setSpacing(14);
-    auto *title = copy("Stable Mouse"); title->setObjectName("title"); auto font = title->font(); font.setPointSize(25); font.setBold(true); title->setFont(font);
-    layout->addWidget(title);
-    status = copy("Paused"); status->setObjectName("status"); font.setPointSize(15); status->setFont(font); layout->addWidget(status);
-    toggleButton = new QPushButton("Turn Stability On"); toggleButton->setObjectName("toggle"); toggleButton->setMinimumHeight(52);
+    auto *page = new QWidget; auto *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(24, 20, 24, 20); layout->setSpacing(16);
+    auto *root = column(page, 1040);
+    auto *title = copy("Stable Mouse", "title"); layout->addWidget(title);
+    status = copy("Paused", "status"); layout->addWidget(status);
+    toggleButton = action("Turn Stability On", "primary", "toggle");
     toggleButton->setAccessibleDescription("Turns system mouse stabilization on or off."); layout->addWidget(toggleButton);
-    layout->addWidget(copy(backend->escapeHint()));
+    layout->addWidget(copy(backend->escapeHint(), "hint"));
     notice = copy(""); notice->setObjectName("notice"); notice->hide(); layout->addWidget(notice);
     auto *tabs = new QTabWidget; layout->addWidget(tabs, 1);
-    auto *controls = new QWidget; controls->setObjectName("settingsPage"); auto *controlsLayout = new QVBoxLayout(controls); controlsLayout->setSpacing(16); controlsLayout->setContentsMargins(4, 20, 12, 20);
+    auto *controls = new QWidget; controls->setObjectName("settingsPage"); auto *controlsLayout = new QVBoxLayout(controls); controlsLayout->setSpacing(24); controlsLayout->setContentsMargins(4, 20, 16, 20);
     auto *smoothingGroup = new QGroupBox("How much smoothing?"); auto *smoothingLayout = new QVBoxLayout(smoothingGroup);
-    auto *presets = new QHBoxLayout;
+    auto *presets = new QHBoxLayout; presets->setSpacing(12);
     auto *presetButtons = new QButtonGroup(this); presetButtons->setExclusive(true); presetButtons->setObjectName("presetButtons");
     const QList<QPair<QString, int>> values{{"Light", 25}, {"Balanced", 55}, {"Strong", 85}};
     for (const auto &preset : values) {
-        auto *button = new QPushButton(preset.first); button->setMinimumHeight(48);
-        button->setCheckable(true); button->setObjectName(QString("preset%1").arg(preset.second)); presetButtons->addButton(button);
+        auto *button = action(preset.first, "choice"); button->setObjectName(QString("preset%1").arg(preset.second));
+        button->setCheckable(true); presetButtons->addButton(button);
         button->setAccessibleName(preset.first + " smoothing preset"); presets->addWidget(button);
         connect(button, &QPushButton::clicked, this, [this, value = preset.second] { strength->setValue(value); });
     }
-    smoothingLayout->addLayout(presets);
-    smoothingLayout->addWidget(copy("More smoothing is steadier, but takes longer to follow your hand."));
+    smoothingLayout->setSpacing(12); smoothingLayout->addLayout(presets);
+    smoothingLayout->addWidget(copy("More smoothing is steadier, but takes longer to follow your hand.", "hint"));
     controlsLayout->addWidget(smoothingGroup);
     auto *methods = new QGroupBox("How to steady movement");
     auto *methodsLayout = new QVBoxLayout(methods); methodsLayout->setSpacing(12);
@@ -104,7 +128,7 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         choice->setChecked(mode == std::clamp(savedMode, 0, 2));
     }
     controlsLayout->addWidget(methods);
-    centerHelp = copy(""); methodsLayout->addWidget(centerHelp);
+    centerHelp = copy("", "hint"); methodsLayout->addWidget(centerHelp);
     strengthValue = copy(""); smoothingLayout->addWidget(strengthValue);
     strength = new ScrollSafeSlider(Qt::Horizontal); strength->setObjectName("strength"); strength->setRange(0, 100); strength->setPageStep(10);
     strength->setAccessibleName("Smoothing strength"); strength->setValue(std::clamp(settings.value("strength", 55).toInt(), 0, 100));
@@ -113,19 +137,19 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     centerWindowValue = copy(""); windowLayout->addWidget(centerWindowValue);
     centerWindow = new ScrollSafeSlider(Qt::Horizontal); centerWindow->setObjectName("centerWindow"); centerWindow->setRange(100,600); centerWindow->setSingleStep(25); centerWindow->setPageStep(50);
     centerWindow->setAccessibleName("Center window, milliseconds"); centerWindow->setValue(std::clamp(settings.value("centerWindow",250).toInt(),100,600));
-    windowLayout->addWidget(centerWindow); windowLayout->addWidget(copy("A longer window uses more recent movement to find the center. It can feel steadier, but slower."));
+    windowLayout->addWidget(centerWindow); windowLayout->addWidget(copy("A longer window uses more recent movement to find the center. It can feel steadier, but slower.", "hint"));
     methodsLayout->addWidget(centerWindowControls);
     auto *speedGroup = new QGroupBox("Pointer speed"); speedGroup->setObjectName("pointerSpeedGroup");
     auto *speedLayout = new QVBoxLayout(speedGroup); controlsLayout->addWidget(speedGroup);
     speedValue = copy(""); speedLayout->addWidget(speedValue);
     speed = new ScrollSafeSlider(Qt::Horizontal); speed->setObjectName("speed"); speed->setRange(25, 200); speed->setPageStep(10);
     speed->setAccessibleName("Pointer speed, percent"); speed->setValue(std::clamp(settings.value("speed", 100).toInt(), 25, 200)); speedLayout->addWidget(speed);
-    speedLayout->addWidget(copy("Pointer speed is separate from smoothing. Leave it at 100% to start."));
+    speedLayout->addWidget(copy("Pointer speed is separate from smoothing. Leave it at 100% to start.", "hint"));
 #ifdef Q_OS_LINUX
     auto *devices = new QGroupBox("Mouse to stabilize"); auto *deviceLayout = new QVBoxLayout(devices);
     device = new ScrollSafeComboBox; device->setAccessibleName("Mouse to stabilize");
-    auto *deviceRow = new QHBoxLayout; deviceRow->addWidget(device, 1); deviceLayout->addLayout(deviceRow);
-    auto *refresh = new QPushButton("Refresh"); refresh->setAccessibleName("Refresh mice"); deviceRow->addWidget(refresh);
+    auto *deviceRow = new QHBoxLayout; deviceRow->setSpacing(12); deviceRow->addWidget(device, 1); deviceLayout->addLayout(deviceRow);
+    auto *refresh = action("Refresh", "secondary"); refresh->setAccessibleName("Refresh mice"); deviceRow->addWidget(refresh);
     connect(refresh, &QPushButton::clicked, this, &Window::refreshDevices);
     controlsLayout->insertWidget(0, devices); refreshDevices();
 #endif
@@ -148,14 +172,16 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     enabledOnLaunch->setChecked(settings.value("enableOnLaunch", false).toBool()); startupLayout->addWidget(enabledOnLaunch);
     controlsLayout->addWidget(startup); controlsLayout->addStretch();
     auto *scroll = new QScrollArea; scroll->setObjectName("settingsScroll"); scroll->setWidgetResizable(true); scroll->setFrameShape(QFrame::NoFrame); scroll->setWidget(controls); tabs->addTab(scroll, "Settings");
-    auto *practicePage = new QWidget; auto *practiceLayout = new QVBoxLayout(practicePage);
-    practiceLayout->addWidget(copy("Move between the large targets and click each one. Compare how it feels with Stability on and off. Nothing here is recorded or saved."));
+    auto *practicePage = new QWidget; practicePage->setObjectName("practicePage"); auto *practiceLayout = new QVBoxLayout(practicePage);
+    practiceLayout->setContentsMargins(4, 20, 4, 8); practiceLayout->setSpacing(16);
+    practiceLayout->addWidget(copy("Move between the large targets and click each one. Compare how it feels with Stability on and off. Nothing here is recorded or saved.", "hint"));
     auto *practice = new Practice; practiceLayout->addWidget(practice, 1);
-    auto *clear = new QPushButton("Clear practice area"); practiceLayout->addWidget(clear); connect(clear, &QPushButton::clicked, practice, &Practice::clear);
+    auto *clear = action("Clear practice area", "secondary"); practiceLayout->addWidget(clear); connect(clear, &QPushButton::clicked, practice, &Practice::clear);
     tabs->addTab(practicePage, "Practice");
     auto *about = new QWidget; about->setObjectName("helpPage"); auto *aboutLayout = new QVBoxLayout(about);
-    aboutLayout->addWidget(copy("Stable Mouse " + QCoreApplication::applicationVersion() + " • Preview"));
-    aboutLayout->addWidget(copy("Free software, licensed under GPL-3.0-only. No account, advertising, analytics, or movement history."));
+    aboutLayout->setContentsMargins(4, 20, 16, 20); aboutLayout->setSpacing(16);
+    aboutLayout->addWidget(copy("Stable Mouse " + QCoreApplication::applicationVersion() + " • Preview", "heading"));
+    aboutLayout->addWidget(copy("Free software, licensed under GPL-3.0-only. No account, advertising, analytics, or movement history.", "hint"));
     auto *updatesGroup = new QGroupBox("Updates"); auto *updatesLayout = new QVBoxLayout(updatesGroup);
     auto *updates = new UpdateWidget(testMode); updatesLayout->addWidget(updates); aboutLayout->addWidget(updatesGroup);
     auto *updateBanner = new QPushButton("An update is available · Download update");
@@ -166,13 +192,17 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     connect(updates, &UpdateWidget::bannerTextChanged, updateBanner, &QPushButton::setText);
     connect(updates, &UpdateWidget::installing, this, &Window::pause);
     connect(updates, &UpdateWidget::installerOpened, qApp, &QApplication::quit);
+    auto *linksGroup = new QGroupBox("On the web"); auto *linksLayout = new QVBoxLayout(linksGroup); linksLayout->setSpacing(4);
     for (const auto &link : QList<QPair<QString, QString>>{
              {"Visit the Stable Mouse website", "https://hunter-boone.github.io/stable-mouse/"},
              {"Open the source code and report an issue", "https://github.com/Hunter-Boone/stable-mouse"}}) {
-        auto *button = new QPushButton(link.first); button->setAccessibleDescription("Opens " + link.second + " in your web browser.");
+        auto *button = action(link.first + "  ↗", "link"); button->setAccessibleName(link.first);
+        button->setAccessibleDescription("Opens " + link.second + " in your web browser.");
         connect(button, &QPushButton::clicked, this, [url = link.second] { QDesktopServices::openUrl(QUrl(url)); });
-        aboutLayout->addWidget(button);
+        linksLayout->addWidget(button);
     }
+    aboutLayout->addWidget(linksGroup);
+    aboutLayout->addWidget(copy("Common questions", "heading"));
     const QList<QPair<QString, QString>> faq{
         {"Is it really free?", "Yes. Stable Mouse is free, open-source software under GPL-3.0-only. There is no subscription, account, advertising, or paid tier. You can inspect, modify, and share the code under its license."},
         {"Can it help with hand tremor?", "Stable Mouse is being built for people who find mouse control difficult because of unwanted hand movement. It reduces some kinds of repeated shaking in generated tests, but usefulness varies. Those results do not establish whether it will help a particular person or condition."},
@@ -186,10 +216,12 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         {"What do the startup options do?", "Open when I sign in starts the app when you sign in to your computer. Turn Mouse Stability on when opened also enables your selected movement method and smoothing automatically. Leave the second option off if you prefer to turn stability on yourself."}
     };
     for (const auto &entry : faq) {
-        auto *card = new QGroupBox(entry.first); auto *cardLayout = new QVBoxLayout(card);
-        cardLayout->addWidget(copy(entry.second)); aboutLayout->addWidget(card);
+        auto *item = new QFrame; item->setObjectName("faq"); auto *itemLayout = new QVBoxLayout(item);
+        itemLayout->setContentsMargins(20, 6, 8, 6); itemLayout->setSpacing(6);
+        itemLayout->addWidget(copy(entry.first, "question")); itemLayout->addWidget(copy(entry.second, "answer"));
+        aboutLayout->addWidget(item);
     }
-    aboutLayout->setSpacing(16); aboutLayout->addStretch();
+    aboutLayout->addStretch();
     auto *helpScroll = new QScrollArea; helpScroll->setObjectName("helpScroll");
     helpScroll->setWidgetResizable(true); helpScroll->setFrameShape(QFrame::NoFrame); helpScroll->setWidget(about);
     tabs->addTab(helpScroll, "Help");
@@ -199,7 +231,9 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         helpScroll->ensureWidgetVisible(updatesGroup);
     });
 
-    auto *quit = new QPushButton("Quit Stable Mouse"); quit->setObjectName("quit"); quit->setMinimumHeight(52); layout->addWidget(quit);
+    auto *quit = action("Quit Stable Mouse", "quiet", "quit");
+    auto *footer = new QHBoxLayout; footer->addStretch(1); footer->addWidget(quit, 0); layout->addLayout(footer);
+    quit->setMinimumWidth(280);
     setCentralWidget(root);
     connect(quit, &QPushButton::clicked, this, &Window::chooseExit);
     connect(toggleButton, &QPushButton::clicked, this, &Window::toggle);
@@ -254,14 +288,14 @@ void Window::chooseExit() {
     dialog->setAttribute(Qt::WA_DeleteOnClose); dialog->setModal(true);
     auto *layout = new QVBoxLayout(dialog);
     layout->setContentsMargins(24, 24, 24, 24); layout->setSpacing(16);
-    layout->addWidget(copy("Keep Stable Mouse running or quit?"));
-    layout->addWidget(copy("Minimizing keeps your current stability setting. Quitting turns stability off."));
-    auto *minimize = new QPushButton("Minimize to system tray"); minimize->setObjectName("exitMinimize");
+    layout->addWidget(copy("Keep Stable Mouse running or quit?", "heading"));
+    layout->addWidget(copy("Minimizing keeps your current stability setting. Quitting turns stability off.", "hint"));
+    auto *minimize = action("Minimize to system tray", "primary", "exitMinimize");
     minimize->setEnabled(tray != nullptr); layout->addWidget(minimize);
-    if (!tray) layout->addWidget(copy("The system tray is not available on this desktop."));
-    auto *quit = new QPushButton("Quit application"); quit->setObjectName("exitQuit"); layout->addWidget(quit);
-    auto *cancel = new QPushButton("Cancel"); cancel->setObjectName("exitCancel"); layout->addWidget(cancel);
-    for (auto *button : {minimize, quit, cancel}) { button->setMinimumHeight(56); button->setAutoDefault(false); }
+    if (!tray) layout->addWidget(copy("The system tray is not available on this desktop.", "hint"));
+    auto *quit = action("Quit application", "secondary", "exitQuit"); layout->addWidget(quit);
+    auto *cancel = action("Cancel", "quiet", "exitCancel"); layout->addWidget(cancel);
+    for (auto *button : {minimize, quit, cancel}) button->setAutoDefault(false);
     cancel->setDefault(true);
     connect(cancel, &QPushButton::clicked, dialog, &QDialog::reject);
     connect(minimize, &QPushButton::clicked, this, [this, dialog] { dialog->accept(); hide(); });

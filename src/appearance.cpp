@@ -7,20 +7,24 @@
 namespace {
 QMap<QString, QString> colors(bool dark) {
     return {
-        {"window", dark ? "#121a26" : "#f5f7fa"},
+        {"window", dark ? "#121a26" : "#eef2f7"},
         {"surface", dark ? "#1d2938" : "#ffffff"},
         {"text", dark ? "#edf3fb" : "#18283d"},
         {"muted", dark ? "#b4c2d3" : "#52647a"},
         {"border", dark ? "#8194ac" : "#74869c"},
+        {"cardBorder", dark ? "#34455a" : "#d3dbe6"},
         {"soft", dark ? "#2a394c" : "#e6edf6"},
         {"teal", dark ? "#69d8bf" : "#166b63"},
         {"tealHover", dark ? "#91e5d2" : "#0c554e"},
+        {"tealDark", dark ? "#3bab92" : "#093f3a"},
         {"tealSoft", dark ? "#183e38" : "#e2f3ef"},
         {"tealText", dark ? "#a4ead9" : "#0e594f"},
         {"indicator", dark ? "#246d62" : "#166b63"},
         {"accent", dark ? "#aac3ff" : "#3459bc"},
         {"accentHover", dark ? "#c5d6ff" : "#24439a"},
+        {"accentDark", dark ? "#7e9be6" : "#1d3680"},
         {"accentSoft", dark ? "#263b62" : "#e8edfc"},
+        {"accentSoftHover", dark ? "#30498a" : "#d7e0fa"},
         {"accentText", dark ? "#d8e5ff" : "#233f8c"},
         {"onColor", dark ? "#101c2c" : "#ffffff"},
         {"focus", dark ? "#ffbe75" : "#9e3c00"},
@@ -71,53 +75,87 @@ QPalette Appearance::palette(bool dark) {
     return result;
 }
 
+// Visual language, so every control reads as one kind of thing at a glance:
+//  - Push buttons have a thick outline and bold text. kind="primary" is the
+//    one filled action, "secondary" is a tinted helper, "link" opens something
+//    elsewhere, "quiet" leaves or cancels, "choice" is one option in a set.
+//  - Cards (QGroupBox) are flat surfaces with a soft border and a bold title.
+//  - Questions (QFrame#faq) are plain text with a rule down the left side.
+//  - Rows (checkbox / radio) are wide outlined tiles that fill when selected.
 QString Appearance::styleSheet(bool dark) {
     QString sheet = R"(
-        QWidget { font-size: 12pt; color: @text@; }
-        QMainWindow, QDialog, QMenu, QScrollArea, QTabWidget::pane, QWidget#settingsPage, QWidget#helpPage { background: @window@; }
+        QWidget { font-size: 13pt; color: @text@; }
+        QMainWindow, QDialog, QMenu, QScrollArea, QTabWidget::pane, QWidget#settingsPage, QWidget#helpPage, QWidget#practicePage, QWidget#column { background: @window@; }
         QLabel { color: @text@; background: transparent; }
-        QLabel#title { font-size: 25pt; font-weight: bold; }
-        QLabel#status { background: @soft@; color: @muted@; padding: 12px; border-radius: 8px; font-weight: bold; }
-        QLabel#status[active="true"] { background: @tealSoft@; color: @tealText@; }
-        QLabel#notice { background: @notice@; color: @noticeText@; padding: 12px; border-radius: 8px; }
-        QPushButton, QComboBox { min-height: 44px; padding: 4px 14px; border: 2px solid @border@; border-radius: 7px; background: @surface@; color: @text@; }
-        QPushButton:hover, QComboBox:hover { background: @accentSoft@; border-color: @accent@; }
-        QComboBox::drop-down { width: 30px; border: none; }
-        QComboBox::down-arrow { image: url(@chevron@); width: 14px; height: 9px; }
-        QComboBox QAbstractItemView { background: @surface@; color: @text@; selection-background-color: @accent@; selection-color: @onColor@; border: 2px solid @border@; }
-        QPushButton:checked { background: @accent@; color: @onColor@; border-color: @accent@; font-weight: bold; }
-        QPushButton:checked:hover { background: @accentHover@; }
-        QPushButton#toggle { background: @teal@; color: @onColor@; border-color: @teal@; font-weight: bold; }
-        QPushButton#toggle:hover { background: @tealHover@; }
-        QPushButton:focus, QComboBox:focus, QCheckBox:focus, QRadioButton:focus { border: 3px solid @focus@; }
-        QGroupBox { background: @surface@; border: 1px solid @border@; border-radius: 10px; margin-top: 12px; padding: 18px 12px 12px; }
-        QGroupBox::title { subcontrol-origin: margin; left: 16px; color: @accentText@; font-weight: bold; }
-        QCheckBox, QRadioButton { min-height: 64px; padding: 8px 16px; spacing: 16px; color: @text@; border: 3px solid @border@; border-radius: 8px; background: @surface@; }
+        QLabel#title { font-size: 28pt; font-weight: bold; }
+        QLabel#hint { color: @muted@; font-size: 12pt; }
+        QLabel#heading { font-size: 17pt; font-weight: bold; padding-top: 8px; }
+        QLabel#question { font-size: 14pt; font-weight: bold; }
+        QLabel#answer { color: @muted@; }
+        QLabel#status { background: @soft@; color: @text@; padding: 14px 18px; border: 3px solid @border@; border-radius: 12px; font-weight: bold; font-size: 15pt; }
+        QLabel#status[active="true"] { background: @tealSoft@; color: @tealText@; border-color: @teal@; }
+        QLabel#notice { background: @notice@; color: @noticeText@; padding: 14px 18px; border: 2px solid @noticeBorder@; border-radius: 10px; }
+
+        QPushButton { min-height: 52px; padding: 6px 22px; border: 3px solid @border@; border-radius: 12px; background: @surface@; color: @text@; font-weight: bold; }
+        QPushButton:hover { background: @accentSoft@; border-color: @accent@; color: @accentText@; }
+        QPushButton:pressed { background: @accentSoftHover@; }
+        QPushButton[kind="primary"] { min-height: 72px; font-size: 17pt; background: @teal@; color: @onColor@; border-color: @tealDark@; }
+        QPushButton[kind="primary"]:hover, QPushButton[kind="primary"]:pressed { background: @tealHover@; color: @onColor@; border-color: @tealDark@; }
+        QPushButton[kind="secondary"] { background: @accentSoft@; color: @accentText@; border-color: @accent@; }
+        QPushButton[kind="secondary"]:hover { background: @accentSoftHover@; }
+        QPushButton[kind="choice"] { min-height: 60px; font-size: 14pt; }
+        QPushButton[kind="choice"]:checked { background: @accent@; color: @onColor@; border-color: @accentDark@; }
+        QPushButton[kind="choice"]:checked:hover, QPushButton[kind="choice"]:checked:pressed { background: @accentHover@; color: @onColor@; }
+        QPushButton[kind="link"] { background: transparent; border: 3px solid transparent; color: @accentText@; text-decoration: underline; text-align: left; padding-left: 12px; }
+        QPushButton[kind="link"]:hover { background: @accentSoft@; border-color: transparent; }
+        QPushButton[kind="quiet"] { background: transparent; color: @muted@; border: 3px solid @border@; }
+        QPushButton[kind="quiet"]:hover, QPushButton[kind="quiet"]:pressed { background: @soft@; color: @text@; border-color: @border@; }
+        QPushButton#updateBanner { min-height: 64px; background: @notice@; color: @noticeText@; border-color: @noticeBorder@; }
+        QPushButton:disabled, QComboBox:disabled { background: @disabled@; color: @disabledText@; border-color: @cardBorder@; }
+
+        QComboBox { min-height: 52px; padding: 4px 18px; border: 3px solid @border@; border-radius: 12px; background: @surface@; color: @text@; }
+        QComboBox:hover { border-color: @accent@; }
+        QComboBox::drop-down { width: 44px; border: none; border-left: 2px solid @cardBorder@; }
+        QComboBox::down-arrow { image: url(@chevron@); width: 16px; height: 10px; }
+        QComboBox QAbstractItemView { background: @surface@; color: @text@; selection-background-color: @accent@; selection-color: @onColor@; border: 2px solid @border@; padding: 4px; }
+        QComboBox QAbstractItemView::item { min-height: 44px; padding: 0 12px; }
+
+        QPushButton:focus, QComboBox:focus, QCheckBox:focus, QRadioButton:focus { border: 4px solid @focus@; }
+
+        QGroupBox { background: @surface@; border: 2px solid @cardBorder@; border-radius: 16px; margin-top: 20px; padding: 30px 20px 20px; font-size: 15pt; font-weight: bold; }
+        QGroupBox::title { subcontrol-origin: margin; left: 18px; top: 4px; padding: 0 10px; background: @surface@; color: @accentText@; border-radius: 6px; }
+        QFrame#faq { background: transparent; border: none; border-left: 5px solid @cardBorder@; border-radius: 0; }
+
+        QCheckBox, QRadioButton { min-height: 64px; padding: 8px 18px; spacing: 18px; color: @text@; border: 2px solid @border@; border-radius: 12px; background: @surface@; }
         QCheckBox:hover, QRadioButton:hover { background: @accentSoft@; border-color: @accent@; }
-        QCheckBox:checked, QRadioButton:checked { background: @tealSoft@; border-color: @teal@; color: @tealText@; }
-        QRadioButton::indicator { width: 28px; height: 28px; border: 2px solid @border@; border-radius: 16px; background: @surface@; }
+        QCheckBox:checked, QRadioButton:checked { background: @tealSoft@; border: 3px solid @teal@; color: @tealText@; font-weight: bold; }
+        QRadioButton::indicator { width: 32px; height: 32px; border: 2px solid @border@; border-radius: 18px; background: @surface@; }
         QRadioButton::indicator:checked { background: @indicator@; border-color: @teal@; image: url(:/icons/check.xpm); }
-        QCheckBox::indicator { width: 28px; height: 28px; border: 2px solid @border@; border-radius: 4px; background: @surface@; }
+        QCheckBox::indicator { width: 32px; height: 32px; border: 2px solid @border@; border-radius: 6px; background: @surface@; }
         QCheckBox::indicator:checked { background: @indicator@; border-color: @teal@; image: url(:/icons/check.xpm); }
-        QSlider { min-height: 44px; background: transparent; }
-        QSlider::groove:horizontal { height: 8px; background: @soft@; border: 1px solid @border@; border-radius: 4px; }
-        QSlider::sub-page:horizontal { background: @accent@; border-radius: 4px; }
-        QSlider::handle:horizontal { width: 28px; margin: -11px 0; background: @accent@; border: 2px solid @surface@; border-radius: 15px; }
-        QSlider::handle:horizontal:focus { border: 3px solid @focus@; }
-        QTabWidget::pane { border: none; border-top: 1px solid @border@; }
-        QTabBar::tab { min-height: 40px; padding: 4px 20px; color: @muted@; border-bottom: 3px solid transparent; }
-        QTabBar::tab:selected { color: @accentText@; background: @accentSoft@; border-bottom: 3px solid @accent@; font-weight: bold; }
-        QTabBar::tab:focus { border: 2px solid @focus@; }
-        QScrollBar:vertical { background: @soft@; width: 20px; margin: 0; }
-        QScrollBar::handle:vertical { background: @border@; min-height: 48px; border: 4px solid @soft@; border-radius: 9px; }
+
+        QSlider { min-height: 52px; background: transparent; }
+        QSlider::groove:horizontal { height: 14px; background: @soft@; border: 2px solid @cardBorder@; border-radius: 8px; }
+        QSlider::sub-page:horizontal { background: @accent@; border: 2px solid @accent@; border-radius: 8px; }
+        QSlider::handle:horizontal { width: 36px; margin: -13px 0; background: @accent@; border: 4px solid @surface@; border-radius: 20px; }
+        QSlider::handle:horizontal:hover { background: @accentHover@; }
+        QSlider::handle:horizontal:focus { border: 4px solid @focus@; }
+
+        QTabWidget::pane { border: none; border-top: 3px solid @cardBorder@; }
+        QTabBar::tab { min-height: 56px; min-width: 120px; padding: 4px 28px; color: @muted@; font-size: 14pt; font-weight: bold; background: transparent; border: 2px solid transparent; border-bottom: 5px solid transparent; border-top-left-radius: 12px; border-top-right-radius: 12px; margin-right: 8px; }
+        QTabBar::tab:hover { background: @soft@; color: @text@; }
+        QTabBar::tab:selected { color: @accentText@; background: @accentSoft@; border-bottom: 5px solid @accent@; }
+        QTabBar::tab:focus { border: 3px solid @focus@; }
+
+        QScrollBar:vertical { background: @soft@; width: 22px; margin: 0; border-radius: 11px; }
+        QScrollBar::handle:vertical { background: @border@; min-height: 56px; border: 5px solid @soft@; border-radius: 11px; }
+        QScrollBar::handle:vertical:hover { background: @accent@; }
         QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
         QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-        QProgressBar { min-height: 28px; border: 1px solid @border@; border-radius: 5px; background: @surface@; color: @text@; text-align: center; }
-        QProgressBar::chunk { background: @tealSoft@; }
+        QProgressBar { min-height: 32px; border: 2px solid @cardBorder@; border-radius: 8px; background: @soft@; color: @text@; text-align: center; font-weight: bold; }
+        QProgressBar::chunk { background: @teal@; border-radius: 6px; }
+        QMenu::item { min-height: 40px; padding: 4px 24px; }
         QMenu::item:selected { background: @accent@; color: @onColor@; }
-        QPushButton#updateBanner { min-height: 64px; background: @notice@; color: @noticeText@; border: 2px solid @noticeBorder@; font-weight: bold; }
-        QPushButton#updateBanner:hover, QPushButton#updateBanner:focus { border: 3px solid @focus@; }
-        QPushButton:disabled, QComboBox:disabled { background: @disabled@; color: @disabledText@; border-color: @border@; }
         QLabel:disabled, QCheckBox:disabled, QRadioButton:disabled { color: @disabledText@; }
     )";
     const auto c = colors(dark);

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(StableMouse VERSION 0.1.7 LANGUAGES CXX)
+project(StableMouse VERSION 0.1.8 LANGUAGES CXX)
 set(STABLE_MOUSE_RELEASE_VERSION "" CACHE STRING "Full release version, matching the GitHub tag without v; empty uses the project version")
 if(STABLE_MOUSE_RELEASE_VERSION STREQUAL "")
   if(DEFINED ENV{STABLE_MOUSE_RELEASE_VERSION} AND NOT "$ENV{STABLE_MOUSE_RELEASE_VERSION}" STREQUAL "")

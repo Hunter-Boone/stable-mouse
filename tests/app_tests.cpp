@@ -165,7 +165,12 @@ private slots:
         QVERIFY(window.findChild<QScrollArea *>("helpScroll"));
         if (qEnvironmentVariableIsSet("STABLE_MOUSE_DESIGN_CAPTURE")) {
             const auto path = qEnvironmentVariable("STABLE_MOUSE_DESIGN_CAPTURE");
-            window.showNormal(); window.resize(1440, 1080);
+            window.showNormal(); window.resize(2560, 1400); QCoreApplication::processEvents();
+            // On wide screens the page grows to its reading-width cap and stays centered.
+            auto *pageWidget = window.findChild<QTabWidget *>()->parentWidget();
+            QCOMPARE(pageWidget->width(), pageWidget->maximumWidth());
+            QVERIFY(std::abs((pageWidget->geometry().center().x()) - window.centralWidget()->width() / 2) <= 2);
+            window.resize(1440, 1080);
             window.findChild<QSlider *>("strength")->setValue(55);
             window.findChild<QSlider *>("speed")->setValue(100);
             auto *scroll = window.findChild<QScrollArea *>("settingsScroll");
@@ -178,6 +183,10 @@ private slots:
             window.findChild<QTabWidget *>()->setCurrentIndex(2);
             QCoreApplication::processEvents();
             QVERIFY(window.grab().save(path + "/help.png"));
+            auto *helpScroll = window.findChild<QScrollArea *>("helpScroll");
+            helpScroll->verticalScrollBar()->setValue(helpScroll->verticalScrollBar()->maximum());
+            QCoreApplication::processEvents();
+            QVERIFY(window.grab().save(path + "/help-bottom.png"));
         }
     }
     void quitOffersSafeChoices() {
