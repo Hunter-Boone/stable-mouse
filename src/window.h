@@ -19,7 +19,9 @@ public:
     void reveal();
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
 private:
+    void applyAppearance();
     void toggle();
     void chooseExit();
     void pause();

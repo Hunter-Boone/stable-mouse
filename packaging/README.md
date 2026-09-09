@@ -16,3 +16,15 @@ convert -background none -density 384 packaging/stable-mouse.svg -depth 8 \
 Normal application builds need no image conversion tools. The Windows packaging
 check compares every embedded image with the source ICO and checks the actual
 installed Start menu shortcut's icon target.
+
+# Windows installer finish page
+
+The final page offers a checked-by-default **Run Stable Mouse** checkbox. Leaving
+it checked launches the installed executable when Finish is clicked. Clearing it
+leaves the app closed; silent installs also leave the app closed. CPack's native
+NSIS finish-page option resolves the executable under the selected installation
+directory, including custom paths with spaces.
+
+`tests/check_windows_finish.py` exercises the actual installer with the checkbox
+cleared and selected, verifies the installed app window, and captures the final
+page. The Windows build workflow runs this after its silent-install checks.

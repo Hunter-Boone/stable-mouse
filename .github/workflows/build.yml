@@ -45,6 +45,7 @@ jobs:
         env:
           STABLE_MOUSE_TEST_NATIVE_INPUT: '1'
           STABLE_MOUSE_TEST_CENTER: '1'
+          STABLE_MOUSE_THEME_CAPTURE: ${{ runner.temp }}/themes
         run: ctest --test-dir build -C Release --output-on-failure
       - name: Capture Windows interface
         if: runner.os == 'Windows'
@@ -92,6 +93,14 @@ jobs:
           }
           if ($matchingShortcuts -eq 0) { throw 'Installed Start menu shortcut is missing' }
           Write-Output 'PASS: Start menu shortcut resolves to the verified application icon'
+      - name: Verify installer finish checkbox
+        if: runner.os == 'Windows'
+        timeout-minutes: 4
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem build/*.exe | Select-Object -First 1
+          python tests/check_windows_finish.py $installer.FullName "$env:RUNNER_TEMP/Stable Mouse Finish Test" "$env:RUNNER_TEMP/installer-finish.png"
+          if ($LASTEXITCODE -ne 0) { throw 'Installer finish checkbox verification failed' }
       - name: Verify macOS disk image
         if: runner.os == 'macOS'
         timeout-minutes: 2
@@ -118,6 +127,8 @@ jobs:
             build/Release/windows_focus_tests.exe
             build/Testing/Temporary/LastTest.log
             ${{ runner.temp }}/stable-mouse-interface.png
+            ${{ runner.temp }}/installer-finish.png
+            ${{ runner.temp }}/themes/*.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:

@@ -1,6 +1,7 @@
 <RCC>
   <qresource prefix="/icons">
     <file>chevron.xpm</file>
+    <file>chevron-light.xpm</file>
     <file>check.xpm</file>
   </qresource>
 </RCC>

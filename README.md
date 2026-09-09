@@ -2,11 +2,11 @@
 
 A free native desktop application for adjustable mouse stabilization. Licensed under GPL-3.0-only. No accounts, telemetry, advertising, or movement history.
 
-**Status: 0.1.6 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
+**Status: 0.1.7 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
 
-[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.6) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
+[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.7) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
 
-Version 0.1.6 puts a clickable update banner below the app title. Click it to download a new version, then click Install update when it is ready. Automatic checks run on each launch and daily while the app stays open.
+Version 0.1.7 adds Light, Dark, and System themes in Settings > Appearance, with a blue accent to distinguish selected controls from the teal stability action. The Windows installer now offers a checked-by-default Run Stable Mouse checkbox on its final page.
 
 ## Controls
 

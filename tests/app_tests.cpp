@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "window.h"
+#include "appearance.h"
 #include "practice.h"
 #include "startup.h"
 #include "update_widget.h"
@@ -17,6 +18,7 @@
 #include <QTemporaryDir>
 #include <QTabWidget>
 #include <QtTest>
+#include <cmath>
 
 class FakeBackend final : public Backend {
 public:
@@ -33,6 +35,58 @@ public:
 class AppTests final : public QObject {
     Q_OBJECT
 private slots:
+    void appearanceChangesAndPersists() {
+        QTemporaryDir configDir;
+        QSettings::setDefaultFormat(QSettings::IniFormat);
+        QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, configDir.path());
+        QCoreApplication::setOrganizationName("StableMouseTests"); QCoreApplication::setApplicationName("Appearance");
+        const auto luminance = [](QColor color) {
+            const auto linear = [](double value) { return value <= .04045 ? value / 12.92 : std::pow((value + .055) / 1.055, 2.4); };
+            return .2126 * linear(color.redF()) + .7152 * linear(color.greenF()) + .0722 * linear(color.blueF());
+        };
+        {
+            Window window(std::make_unique<FakeBackend>(), false, true);
+            window.showNormal(); window.resize(900, 1000);
+            auto *choice = window.findChild<QComboBox *>("appearance"); QVERIFY(choice);
+            auto *tabs = window.findChild<QTabWidget *>();
+            window.findChild<QSlider *>("strength")->setValue(55);
+            for (const auto &mode : {QString("light"), QString("dark")}) {
+                choice->setCurrentIndex(choice->findData(mode)); QCoreApplication::processEvents();
+                QCOMPARE(QSettings().value("appearance").toString(), mode);
+                QCOMPARE(window.findChild<QSlider *>("strength")->value(), 55);
+                const auto palette = window.palette();
+                QCOMPARE(palette.color(QPalette::Window).lightness() < 128, mode == "dark");
+                QCOMPARE(window.grab().toImage().pixelColor(5, 5), palette.color(QPalette::Window));
+                tabs->setCurrentIndex(1); QCoreApplication::processEvents();
+                auto *practice = window.findChild<Practice *>(); QVERIFY(practice);
+                QCOMPARE(practice->grab().toImage().pixelColor(0, 0), Appearance::palette(mode == "dark").color(QPalette::Base));
+                tabs->setCurrentIndex(0);
+                for (const auto pair : {qMakePair(QPalette::Text, QPalette::Base), qMakePair(QPalette::WindowText, QPalette::Window), qMakePair(QPalette::HighlightedText, QPalette::Highlight)}) {
+                    const auto a = luminance(palette.color(pair.first)), b = luminance(palette.color(pair.second));
+                    QVERIFY((std::max(a, b) + .05) / (std::min(a, b) + .05) >= 4.5);
+                }
+                if (qEnvironmentVariableIsSet("STABLE_MOUSE_THEME_CAPTURE")) {
+                    const auto folder = qEnvironmentVariable("STABLE_MOUSE_THEME_CAPTURE"); QDir().mkpath(folder);
+                    for (int tab = 0; tab < tabs->count(); ++tab) {
+                        tabs->setCurrentIndex(tab); QCoreApplication::processEvents();
+                        QVERIFY(window.grab().save(folder + "/" + mode + "-" + QString::number(tab) + ".png"));
+                    }
+                    window.findChild<QPushButton *>("quit")->click(); QCoreApplication::processEvents();
+                    auto *dialog = window.findChild<QDialog *>("exitDialog"); QVERIFY(dialog);
+                    QVERIFY(dialog->grab().save(folder + "/" + mode + "-dialog.png"));
+                    dialog->reject(); QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+                    tabs->setCurrentIndex(0);
+                }
+            }
+        }
+        Window reopened(std::make_unique<FakeBackend>(), false, true);
+        auto *choice = reopened.findChild<QComboBox *>("appearance");
+        QCOMPARE(choice->currentData().toString(), QString("dark"));
+        QVERIFY(reopened.palette().color(QPalette::Window).lightness() < 128);
+        choice->setCurrentIndex(choice->findData("system"));
+        QCOMPARE(QSettings().value("appearance").toString(), QString("system"));
+        QCOMPARE(reopened.palette().color(QPalette::Window).lightness() < 128, Appearance::systemIsDark());
+    }
     void updatesReleaseMouseAndOpenHelp() {
         auto fake = std::make_unique<FakeBackend>(); auto *input = fake.get();
         Window window(std::move(fake), false, true);

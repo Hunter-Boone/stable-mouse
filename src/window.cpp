@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 #include "window.h"
+#include "appearance.h"
 #include "practice.h"
 #include "startup.h"
 #include "update_widget.h"
@@ -23,6 +24,8 @@
 #include <QShortcut>
 #include <QSignalBlocker>
 #include <QSlider>
+#include <QStyle>
+#include <QStyleHints>
 #include <QSystemTrayIcon>
 #include <QTabWidget>
 #include <QTimer>
@@ -58,55 +61,12 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     const auto available = screen()->availableGeometry().size();
     resize(std::min(700, available.width() - 40), std::min(860, available.height() - 80));
     auto readable = this->font(); readable.setPointSize(std::max(12, readable.pointSize())); setFont(readable);
-    // A complete palette keeps native menus and checkbox glyphs readable too.
-    QPalette colors = palette();
-    colors.setColor(QPalette::Window, QColor("#faf9f3"));
-    colors.setColor(QPalette::WindowText, QColor("#213e35"));
-    colors.setColor(QPalette::Base, QColor("#fffef9"));
-    colors.setColor(QPalette::AlternateBase, QColor("#eaf0e5"));
-    colors.setColor(QPalette::Text, QColor("#213e35"));
-    colors.setColor(QPalette::Button, QColor("#fffef9"));
-    colors.setColor(QPalette::ButtonText, QColor("#213e35"));
-    colors.setColor(QPalette::Highlight, QColor("#185e53"));
-    colors.setColor(QPalette::HighlightedText, Qt::white);
-    setPalette(colors);
-    setStyleSheet(R"(
-        QWidget { font-size: 12pt; }
-        QMainWindow, QScrollArea, QTabWidget::pane, QWidget#settingsPage, QWidget#helpPage { background: #faf9f3; }
-        QLabel { color: #213e35; background: transparent; }
-        QLabel#title { font-size: 25pt; font-weight: bold; }
-        QLabel#status { background: #eaf0e5; color: #185e53; padding: 12px; border-radius: 8px; font-weight: bold; }
-        QLabel#notice { background: #f0eddf; padding: 12px; border-radius: 8px; }
-        QPushButton, QComboBox { min-height: 44px; padding: 4px 14px; border: 1px solid #8ba598; border-radius: 7px; background: #fffef9; color: #213e35; }
-        QPushButton:hover, QComboBox:hover { background: #eaf0e5; border-color: #185e53; }
-        QComboBox::drop-down { width: 30px; border: none; }
-        QComboBox::down-arrow { image: url(:/icons/chevron.xpm); width: 14px; height: 9px; }
-        QPushButton:checked, QPushButton#toggle { background: #185e53; color: white; border-color: #185e53; font-weight: bold; }
-        QPushButton#toggle:hover, QPushButton:checked:hover { background: #124a42; }
-        QPushButton:focus, QComboBox:focus, QCheckBox:focus, QRadioButton:focus { border: 3px solid #a74d22; }
-        QGroupBox { background: #fffef9; border: 1px solid #d7ddd2; border-radius: 10px; margin-top: 12px; padding: 18px 12px 12px; }
-        QGroupBox::title { subcontrol-origin: margin; left: 16px; color: #185e53; }
-        QCheckBox, QRadioButton { min-height: 64px; padding: 8px 16px; spacing: 16px; color: #213e35; border: 3px solid #d7ddd2; border-radius: 8px; background: #fffef9; }
-        QCheckBox:hover, QRadioButton:hover { background: #eaf0e5; border-color: #8ba598; }
-        QCheckBox:checked, QRadioButton:checked { background: #eaf0e5; border-color: #185e53; }
-        QRadioButton::indicator { width: 28px; height: 28px; border: 2px solid #8ba598; border-radius: 16px; background: #fffef9; }
-        QRadioButton::indicator:checked { background: #185e53; border-color: #185e53; image: url(:/icons/check.xpm); }
-        QCheckBox::indicator { width: 28px; height: 28px; border: 2px solid #8ba598; border-radius: 4px; background: #fffef9; }
-        QCheckBox::indicator:checked { background: #185e53; border-color: #185e53; image: url(:/icons/check.xpm); }
-        QSlider { min-height: 44px; background: transparent; }
-        QSlider::groove:horizontal { height: 8px; background: #d7ddd2; border-radius: 4px; }
-        QSlider::sub-page:horizontal { background: #185e53; border-radius: 4px; }
-        QSlider::handle:horizontal { width: 28px; margin: -11px 0; background: #185e53; border: 2px solid #fffef9; border-radius: 15px; }
-        QSlider::handle:horizontal:focus { border: 3px solid #a74d22; }
-        QTabWidget::pane { border: none; border-top: 1px solid #d7ddd2; }
-        QTabBar::tab { min-height: 40px; padding: 4px 20px; color: #53675d; border-bottom: 3px solid transparent; }
-        QTabBar::tab:selected { color: #185e53; border-bottom: 3px solid #185e53; font-weight: bold; }
-        QTabBar::tab:focus { border: 2px solid #a74d22; }
-        QScrollBar:vertical { background: #eaf0e5; width: 20px; margin: 0; }
-        QScrollBar::handle:vertical { background: #8ba598; min-height: 48px; border: 4px solid #eaf0e5; border-radius: 9px; }
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
-        QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: transparent; }
-    )");
+    applyAppearance();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+    connect(qApp->styleHints(), &QStyleHints::colorSchemeChanged, this, [this] {
+        if (settings.value("appearance", "system").toString() == "system") applyAppearance();
+    });
+#endif
     auto *root = new QWidget; auto *layout = new QVBoxLayout(root);
     layout->setContentsMargins(24, 20, 24, 20); layout->setSpacing(14);
     auto *title = copy("Stable Mouse"); title->setObjectName("title"); auto font = title->font(); font.setPointSize(25); font.setBold(true); title->setFont(font);
@@ -169,6 +129,19 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     connect(refresh, &QPushButton::clicked, this, &Window::refreshDevices);
     controlsLayout->insertWidget(0, devices); refreshDevices();
 #endif
+    auto *appearanceGroup = new QGroupBox("Appearance");
+    auto *appearanceLayout = new QVBoxLayout(appearanceGroup);
+    auto *appearance = new ScrollSafeComboBox; appearance->setObjectName("appearance");
+    appearance->setAccessibleName("Color theme");
+    appearance->addItem("Use system theme", "system");
+    appearance->addItem("Light", "light"); appearance->addItem("Dark", "dark");
+    const auto savedAppearance = settings.value("appearance", "system").toString();
+    appearance->setCurrentIndex(std::max(0, appearance->findData(savedAppearance)));
+    appearanceLayout->addWidget(appearance);
+    controlsLayout->insertWidget(0, appearanceGroup);
+    connect(appearance, &QComboBox::currentIndexChanged, this, [this, appearance] {
+        settings.setValue("appearance", appearance->currentData()); applyAppearance();
+    });
     auto *startup = new QGroupBox("When you sign in"); auto *startupLayout = new QVBoxLayout(startup);
     login = new RowCheckBox("Open when I sign in"); login->setObjectName("login"); login->setChecked(testMode ? false : Startup::enabled()); startupLayout->addWidget(login);
     auto *enabledOnLaunch = new RowCheckBox("Turn Mouse Stability on when opened"); enabledOnLaunch->setObjectName("enableOnLaunch");
@@ -187,7 +160,6 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     auto *updates = new UpdateWidget(testMode); updatesLayout->addWidget(updates); aboutLayout->addWidget(updatesGroup);
     auto *updateBanner = new QPushButton("An update is available · Download update");
     updateBanner->setObjectName("updateBanner");
-    updateBanner->setStyleSheet("QPushButton { min-height: 64px; background: #f4dfad; color: #47330c; border: 2px solid #937023; font-weight: bold; } QPushButton:hover { background: #eed095; } QPushButton:focus { border: 3px solid #47330c; }");
     updateBanner->setAccessibleDescription("Download the available update, or install it when the download is ready.");
     updateBanner->hide(); layout->insertWidget(1, updateBanner);
     connect(updates, &UpdateWidget::updateAvailable, updateBanner, &QWidget::setVisible);
@@ -253,11 +225,26 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
         tray->setContextMenu(menu); tray->show();
         connect(tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) { if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) reveal(); });
     }
-    updateConfig(); syncState();
+    applyAppearance(); updateConfig(); syncState();
     if (!testMode && enabledOnLaunch->isChecked()) QTimer::singleShot(300, this, [this] { if (!backend->active() && !starting) toggle(); });
     if (!startupLaunch || !tray) showMaximized();
 }
 Window::~Window() { backend->stop(); }
+void Window::changeEvent(QEvent *event) {
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::ApplicationPaletteChange && settings.value("appearance", "system").toString() == "system")
+        applyAppearance();
+}
+void Window::applyAppearance() {
+    const auto choice = settings.value("appearance", "system").toString();
+    const bool dark = choice == "dark" || (choice != "light" && Appearance::systemIsDark());
+    setPalette(Appearance::palette(dark));
+    setStyleSheet(Appearance::styleSheet(dark));
+    // Custom painting reads palette roles that stylesheet inheritance does not
+    // carry to the practice canvas. Give it the complete theme explicitly.
+    for (auto *practice : findChildren<Practice *>()) practice->setPalette(Appearance::palette(dark));
+}
+
 void Window::chooseExit() {
     if (auto *existing = findChild<QDialog *>("exitDialog")) { existing->raise(); return; }
     auto *dialog = new QDialog(this);
@@ -290,6 +277,7 @@ void Window::toggle() {
 void Window::pause() { backend->stop(); starting = false; syncState(); }
 void Window::syncState() {
     const bool on = backend->active();
+    status->setProperty("active", on); status->style()->unpolish(status); status->style()->polish(status);
     status->setText(on ? "Stability is on" : starting ? "Waiting for mouse access…" : "Stability is off · Your mouse moves normally");
     toggleButton->setText(on ? "Turn Stability Off" : starting ? "Cancel" : "Turn Stability On");
     if (device) device->setEnabled(!on && !starting);
