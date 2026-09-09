@@ -51,7 +51,7 @@ The browser fixes speed at 100% and marks clicks without cancelling movement.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 
-Version 0.1.5 fixes the Windows Start menu icon. The download links and update
+Version 0.1.6 adds a clickable update banner at the top of the app. The download links and update
 instructions point to this release; the demo filter is unchanged.
 
 When publishing a new application release, update the version, asset links and
