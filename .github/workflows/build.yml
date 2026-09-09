@@ -127,7 +127,7 @@ jobs:
             build/Release/windows_focus_tests.exe
             build/Testing/Temporary/LastTest.log
             ${{ runner.temp }}/stable-mouse-interface.png
-            ${{ runner.temp }}/installer-finish.png
+            ${{ runner.temp }}/installer-*.png
             ${{ runner.temp }}/themes/*.png
           if-no-files-found: error
       - uses: actions/upload-artifact@v4

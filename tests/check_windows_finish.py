@@ -23,6 +23,9 @@ user.SendMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, win
 user.SendMessageW.restype = ctypes.c_ssize_t
 user.PostMessageW.argtypes = user.SendMessageW.argtypes
 user.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+user.GetAncestor.argtypes = [wintypes.HWND, wintypes.UINT]
+user.GetAncestor.restype = wintypes.HWND
+user.SetForegroundWindow.argtypes = [wintypes.HWND]
 
 
 def label(hwnd, class_name=False):
@@ -57,6 +60,7 @@ def wait_for(check, timeout=30):
 
 def click(hwnd):
     assert user.IsWindowEnabled(hwnd), label(hwnd)
+    user.SetForegroundWindow(user.GetAncestor(hwnd, 2))  # GA_ROOT
     assert user.PostMessageW(hwnd, 0x00F5, 0, 0)  # BM_CLICK, asynchronously
     time.sleep(.4)
 
@@ -91,18 +95,28 @@ def main():
         # NSIS requires /D last and its path unquoted, including spaces.
         command = subprocess.list2cmdline([str(installer)]) + ' /D=' + str(root)
         process = subprocess.Popen(command)
+        dialog = None
         try:
             dialog = wait_for(lambda: next((w for w in windows() if label(w, True) == '#32770'
                 and 'Stable Mouse' in label(w) and 'Setup' in label(w)), None))
             deadline = time.monotonic() + 90
             while time.monotonic() < deadline:
                 controls = windows(dialog)
+                if any(label(w) == 'Choose Start Menu Folder' for w in controls):
+                    # Fill the folder explicitly, including when a prior silent
+                    # install left the native page's edit control empty.
+                    for edit in controls:
+                        if label(edit, True) == 'Edit' and not label(edit):
+                            folder = ctypes.create_unicode_buffer('Stable Mouse Finish Test')
+                            user.SendMessageW(edit, 0x000C, 0, ctypes.cast(folder, ctypes.c_void_p).value)
+                            print('Entered Start menu folder', flush=True)
                 run_box = next((w for w in controls if label(w) == 'Run Stable Mouse' and label(w, True) == 'Button'), None)
                 if run_box:
                     break
                 buttons = [w for w in controls if label(w, True) == 'Button' and user.IsWindowEnabled(w)
                            and label(w) in ('Next >', 'I Agree', 'Install')]
                 if buttons:
+                    print('Installer:', label(buttons[0]), flush=True)
                     click(buttons[0])
                 else:
                     time.sleep(.2)
@@ -133,6 +147,11 @@ def main():
                 time.sleep(2)
                 assert not app_processes(), 'Unchecked Run launched the app'
                 print('PASS: unchecked Run Stable Mouse leaves the application closed')
+        except Exception:
+            if dialog and user.IsWindowVisible(dialog):
+                capture(dialog, screenshot.with_name('installer-failure.png'))
+                print('Visible controls:', [(label(w, True), label(w), bool(user.IsWindowEnabled(w))) for w in windows(dialog)], flush=True)
+            raise
         finally:
             if process.poll() is None:
                 subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'], check=False)
