@@ -2,11 +2,11 @@
 
 A free native desktop application for adjustable mouse stabilization. Licensed under GPL-3.0-only. No accounts, telemetry, advertising, or movement history.
 
-**Status: 0.1.5 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
+**Status: 0.1.6 development preview.** Windows is the first hardware testing priority. The stronger filter has passed controlled cursor-replay tests on a Windows workstation. Comfort and physical-mouse usability still need testing. See [validation](docs/validation.md) for what has actually been tested and what remains. The [larger motion tests](docs/motion-testing.md) report residual shaking, target holding and reach delay, with a repeatable usability checklist.
 
-[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.5) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
+[Download the preview installers](https://github.com/Hunter-Boone/stable-mouse/releases/tag/v0.1.6) for Windows x64, macOS Intel/Apple Silicon, Debian 12 x64, and Ubuntu 24.04 x64. Windows and macOS builds are unsigned. All platforms passed automated build, test, and packaged-launch checks; physical-device testing is still needed.
 
-Version 0.1.5 embeds the existing icon in the Windows app, installer, and uninstaller so Start menu shortcuts display it.
+Version 0.1.6 puts a clickable update banner below the app title. Click it to download a new version, then click Install update when it is ready. Automatic checks run on each launch and daily while the app stays open.
 
 ## Controls
 
@@ -15,7 +15,7 @@ Version 0.1.5 embeds the existing icon in the Windows app, installer, and uninst
 - Adjust pointer speed from 25% to 200%.
 - Practice moving and clicking targets without saving movement data.
 - Open the app at login, and separately choose whether stabilization starts enabled.
-- Check for updates automatically, or use **Help > Check for updates**. Download an update and choose when to open its installer.
+- Use the update banner to download and install a new version, or check manually in **Help > Check for updates**.
 
 The first launch is paused and login startup is off. Settings stay on your computer. Closing the window keeps the app in the tray when available. Quit releases input. If there is no system tray, closing the window stops the app.
 

@@ -39,6 +39,11 @@ private slots:
         auto *updates = window.findChild<UpdateWidget *>(); QVERIFY(updates);
         auto *banner = window.findChild<QPushButton *>("updateBanner"); QVERIFY(banner->isHidden());
         emit updates->updateAvailable(true); QVERIFY(!banner->isHidden());
+        emit updates->bannerTextChanged("Stable Mouse v9.0.0 available · Download update");
+        QCOMPARE(banner->text(), QString("Stable Mouse v9.0.0 available · Download update"));
+        window.showNormal(); window.resize(700, 820); QCoreApplication::processEvents();
+        QVERIFY(banner->height() >= 64);
+        QVERIFY(banner->geometry().bottom() < window.findChild<QLabel *>("status")->geometry().top());
         banner->click(); QCOMPARE(window.findChild<QTabWidget *>()->currentIndex(), 2);
         window.findChild<QPushButton *>("toggle")->click(); QVERIFY(input->active());
         emit updates->installing(); QVERIFY(!input->active());

@@ -39,7 +39,7 @@ bool openInstaller(const QString &path) {
 UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
                            std::function<bool(const QString &)> launcher) : QWidget(parent) {
     setObjectName("updates");
-    auto *updater = service ? service : new Updater(this);
+    updater = service ? service : new Updater(this);
     if (!launcher) launcher = openInstaller;
     auto *layout = new QVBoxLayout(this); layout->setContentsMargins(0, 0, 0, 0); layout->setSpacing(12);
     auto *automatic = new QCheckBox("Check for updates automatically"); automatic->setObjectName("automaticUpdates");
@@ -50,7 +50,7 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
     auto *progress = new QProgressBar; progress->setObjectName("updateProgress"); progress->setRange(0, 100); layout->addWidget(progress);
     auto *check = new QPushButton("Check for updates"); check->setObjectName("checkUpdates"); layout->addWidget(check);
     auto *download = new QPushButton("Download update"); download->setObjectName("downloadUpdate"); layout->addWidget(download);
-    auto *install = new QPushButton("Install update and close Stable Mouse"); install->setObjectName("installUpdate"); layout->addWidget(install);
+    auto *install = installButton = new QPushButton("Install update and close Stable Mouse"); install->setObjectName("installUpdate"); layout->addWidget(install);
     auto *instructions = new QLabel;
 #ifdef Q_OS_MACOS
     instructions->setText("The disk image will open. Drag Stable Mouse into Applications, replace the old copy, then reopen the app.");
@@ -60,7 +60,7 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
     instructions->setText("The package will open in your software installer. Install it, then reopen Stable Mouse. Your settings will be kept.");
 #endif
     instructions->setWordWrap(true); layout->addWidget(instructions);
-    auto *notes = new QPushButton("View release notes and downloads"); notes->setObjectName("updateNotes"); layout->addWidget(notes);
+    auto *notes = notesButton = new QPushButton("View release notes and downloads"); notes->setObjectName("updateNotes"); layout->addWidget(notes);
     auto *cancel = new QPushButton("Cancel update"); cancel->setObjectName("cancelUpdate"); layout->addWidget(cancel);
     const auto refresh = [=] {
         const auto state = updater->state();
@@ -72,6 +72,12 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
         notes->setVisible(!updater->release().page.isEmpty());
         progress->setVisible(state == Updater::State::Downloading);
         if (state != Updater::State::Downloading) progress->setValue(0);
+        QString action = "Download update";
+        if (state == Updater::State::Downloading) action = "Downloading… View progress";
+        else if (state == Updater::State::Ready) action = "Install update";
+        else if (state == Updater::State::Error) action = "Update failed. Retry";
+        else if (updater->release().download.isEmpty()) action = "View update downloads";
+        emit bannerTextChanged("Stable Mouse " + updater->release().version + " available · " + action);
         emit updateAvailable(!updater->release().version.isEmpty());
     };
     connect(updater, &Updater::changed, this, refresh); refresh();
@@ -79,10 +85,10 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
     connect(check, &QPushButton::clicked, updater, &Updater::check);
     connect(download, &QPushButton::clicked, updater, &Updater::download);
     connect(cancel, &QPushButton::clicked, updater, &Updater::cancel);
-    connect(notes, &QPushButton::clicked, this, [updater, status] {
+    connect(notes, &QPushButton::clicked, this, [this, status] {
         if (!QDesktopServices::openUrl(updater->release().page)) status->setText("Could not open your browser. Visit github.com/Hunter-Boone/stable-mouse/releases for downloads.");
     });
-    connect(install, &QPushButton::clicked, this, [this, updater, launcher, status] {
+    connect(install, &QPushButton::clicked, this, [this, launcher, status] {
         if (!updater->verifyInstaller()) return;
         emit installing();
         if (!launcher(updater->installerPath())) {
@@ -90,20 +96,32 @@ UpdateWidget::UpdateWidget(bool testMode, QWidget *parent, Updater *service,
         }
         updater->retainInstaller(); emit installerOpened();
     });
-    const auto automaticCheck = [=] {
+    const auto automaticCheck = [=](bool startup) {
         if (testMode || !automatic->isChecked()) return;
         if (updater->state() != Updater::State::Idle && updater->state() != Updater::State::Current && updater->state() != Updater::State::Error) return;
         const auto now = QDateTime::currentDateTimeUtc();
         const auto last = QSettings().value("updates/lastAutomaticCheck").toDateTime();
-        if (last.isValid() && last <= now && last.secsTo(now) < 24 * 60 * 60) return;
+        if (!startup && last.isValid() && last <= now && last.secsTo(now) < 24 * 60 * 60) return;
         QSettings().setValue("updates/lastAutomaticCheck", now); updater->check();
     };
     connect(automatic, &QCheckBox::toggled, this, [automaticCheck](bool checked) {
-        QSettings().setValue("updates/automatic", checked); if (checked) automaticCheck();
+        QSettings().setValue("updates/automatic", checked); if (checked) automaticCheck(true);
     });
     if (!testMode) {
-        QTimer::singleShot(2000, this, automaticCheck);
-        auto *timer = new QTimer(this); timer->setInterval(60 * 60 * 1000);
-        connect(timer, &QTimer::timeout, this, automaticCheck); timer->start();
+        QTimer::singleShot(2000, this, [automaticCheck] { automaticCheck(true); });
+        auto *timer = new QTimer(this); timer->setObjectName("automaticUpdateTimer"); timer->setInterval(60 * 60 * 1000);
+        connect(timer, &QTimer::timeout, this, [automaticCheck] { automaticCheck(false); }); timer->start();
+    }
+}
+
+void UpdateWidget::activateUpdate() {
+    switch (updater->state()) {
+    case Updater::State::Available:
+        if (updater->release().download.isEmpty()) notesButton->click();
+        else updater->download();
+        break;
+    case Updater::State::Ready: installButton->click(); break;
+    case Updater::State::Error: updater->check(); break;
+    default: break;
     }
 }

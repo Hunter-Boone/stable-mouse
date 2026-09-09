@@ -191,21 +191,29 @@ private slots:
         });
         connect(&widget, &UpdateWidget::installing, &widget, [&] { paused = true; });
         QSignalSpy finished(&widget, &UpdateWidget::installerOpened);
+        QSignalSpy banner(&widget, &UpdateWidget::bannerTextChanged);
         auto *automatic = widget.findChild<QCheckBox *>("automaticUpdates");
         automatic->setChecked(false); QVERIFY(!QSettings().value("updates/automatic").toBool());
         automatic->setChecked(true); QVERIFY(network.requests.isEmpty()); // Test mode stays offline.
         widget.findChild<QPushButton *>("checkUpdates")->click();
         QTRY_COMPARE(updater.state(), Updater::State::Available);
-        widget.findChild<QPushButton *>("downloadUpdate")->click();
+        QVERIFY(banner.last()[0].toString().contains("Download update"));
+        widget.activateUpdate();
+        QCOMPARE(updater.state(), Updater::State::Downloading);
+        QVERIFY(banner.last()[0].toString().contains("Downloading"));
+        const auto requestCount = network.requests.size();
+        widget.activateUpdate(); // Repeated banner clicks must not restart the download.
+        QCOMPARE(network.requests.size(), requestCount);
         QTRY_COMPARE(updater.state(), Updater::State::Ready);
-        widget.findChild<QPushButton *>("installUpdate")->click();
+        QVERIFY(banner.last()[0].toString().contains("Install update"));
+        widget.activateUpdate();
         QVERIFY(paused); QVERIFY(!opened.isEmpty()); QCOMPARE(finished.size(), 0);
         QVERIFY(widget.findChild<QLabel *>("updateStatus")->text().contains("Could not open"));
-        accept = true; widget.findChild<QPushButton *>("installUpdate")->click();
+        accept = true; widget.activateUpdate();
         QCOMPARE(finished.size(), 1); QVERIFY(QFile::exists(opened));
         QDir(QFileInfo(opened).absolutePath()).removeRecursively();
     }
-    void automaticChecksRespectPreferenceAndDailyLimit() {
+    void automaticChecksOnEachLaunchThenDaily() {
         Network network; network.metadata = "[]";
         {
             Updater updater(nullptr, &network); UpdateWidget widget(false, nullptr, &updater);
@@ -215,17 +223,24 @@ private slots:
         }
         {
             Updater updater(nullptr, &network); UpdateWidget widget(false, nullptr, &updater);
-            QTest::qWait(2200); QCOMPARE(network.requests.size(), 1);
+            QTRY_COMPARE_WITH_TIMEOUT(network.requests.size(), 2, 4000);
+            QTRY_COMPARE(updater.state(), Updater::State::Current);
+            auto *timer = widget.findChild<QTimer *>("automaticUpdateTimer"); QVERIFY(timer);
+            QVERIFY(QMetaObject::invokeMethod(timer, "timeout"));
+            QCOMPARE(network.requests.size(), 2);
+            QSettings().setValue("updates/lastAutomaticCheck", QDateTime::currentDateTimeUtc().addDays(-1).addSecs(-1));
+            QVERIFY(QMetaObject::invokeMethod(timer, "timeout"));
+            QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 3);
             // Explicit checks bypass the automatic daily limit.
             widget.findChild<QPushButton *>("checkUpdates")->click();
-            QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 2);
+            QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 4);
         }
         QSettings().remove("updates/lastAutomaticCheck"); QSettings().setValue("updates/automatic", false);
         {
             Updater updater(nullptr, &network); UpdateWidget widget(false, nullptr, &updater);
-            QTest::qWait(2200); QCOMPARE(network.requests.size(), 2);
+            QTest::qWait(2200); QCOMPARE(network.requests.size(), 4);
             widget.findChild<QCheckBox *>("automaticUpdates")->setChecked(true);
-            QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 3);
+            QTRY_COMPARE(updater.state(), Updater::State::Current); QCOMPARE(network.requests.size(), 5);
         }
     }
     void streamedInstallerDownload() {

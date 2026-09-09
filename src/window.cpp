@@ -185,9 +185,13 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     aboutLayout->addWidget(copy("Free software, licensed under GPL-3.0-only. No account, advertising, analytics, or movement history."));
     auto *updatesGroup = new QGroupBox("Updates"); auto *updatesLayout = new QVBoxLayout(updatesGroup);
     auto *updates = new UpdateWidget(testMode); updatesLayout->addWidget(updates); aboutLayout->addWidget(updatesGroup);
-    auto *updateBanner = new QPushButton("An update is available. Open Help to update Stable Mouse.");
-    updateBanner->setObjectName("updateBanner"); updateBanner->hide(); layout->insertWidget(3, updateBanner);
+    auto *updateBanner = new QPushButton("An update is available · Download update");
+    updateBanner->setObjectName("updateBanner");
+    updateBanner->setStyleSheet("QPushButton { min-height: 64px; background: #f4dfad; color: #47330c; border: 2px solid #937023; font-weight: bold; } QPushButton:hover { background: #eed095; } QPushButton:focus { border: 3px solid #47330c; }");
+    updateBanner->setAccessibleDescription("Download the available update, or install it when the download is ready.");
+    updateBanner->hide(); layout->insertWidget(1, updateBanner);
     connect(updates, &UpdateWidget::updateAvailable, updateBanner, &QWidget::setVisible);
+    connect(updates, &UpdateWidget::bannerTextChanged, updateBanner, &QPushButton::setText);
     connect(updates, &UpdateWidget::installing, this, &Window::pause);
     connect(updates, &UpdateWidget::installerOpened, qApp, &QApplication::quit);
     for (const auto &link : QList<QPair<QString, QString>>{
@@ -217,8 +221,10 @@ Window::Window(std::unique_ptr<Backend> input, bool startupLaunch, bool testMode
     auto *helpScroll = new QScrollArea; helpScroll->setObjectName("helpScroll");
     helpScroll->setWidgetResizable(true); helpScroll->setFrameShape(QFrame::NoFrame); helpScroll->setWidget(about);
     tabs->addTab(helpScroll, "Help");
-    connect(updateBanner, &QPushButton::clicked, this, [tabs, helpScroll, updatesGroup] {
-        tabs->setCurrentIndex(2); helpScroll->ensureWidgetVisible(updatesGroup);
+    connect(updateBanner, &QPushButton::clicked, this, [tabs, helpScroll, updatesGroup, updates] {
+        tabs->setCurrentIndex(2);
+        updates->activateUpdate();
+        helpScroll->ensureWidgetVisible(updatesGroup);
     });
 
     auto *quit = new QPushButton("Quit Stable Mouse"); quit->setObjectName("quit"); quit->setMinimumHeight(52); layout->addWidget(quit);
