@@ -238,8 +238,10 @@ void Window::changeEvent(QEvent *event) {
 void Window::applyAppearance() {
     const auto choice = settings.value("appearance", "system").toString();
     const bool dark = choice == "dark" || (choice != "light" && Appearance::systemIsDark());
-    setPalette(Appearance::palette(dark));
     setStyleSheet(Appearance::styleSheet(dark));
+    // Apply the palette after replacing the stylesheet so Qt does not resolve
+    // the new palette through the previous theme's text colors.
+    setPalette(Appearance::palette(dark));
     // Custom painting reads palette roles that stylesheet inheritance does not
     // carry to the practice canvas. Give it the complete theme explicitly.
     for (auto *practice : findChildren<Practice *>()) practice->setPalette(Appearance::palette(dark));

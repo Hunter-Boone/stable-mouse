@@ -63,7 +63,8 @@ private slots:
                 tabs->setCurrentIndex(0);
                 for (const auto pair : {qMakePair(QPalette::Text, QPalette::Base), qMakePair(QPalette::WindowText, QPalette::Window), qMakePair(QPalette::HighlightedText, QPalette::Highlight)}) {
                     const auto a = luminance(palette.color(pair.first)), b = luminance(palette.color(pair.second));
-                    QVERIFY((std::max(a, b) + .05) / (std::min(a, b) + .05) >= 4.5);
+                    QVERIFY2((std::max(a, b) + .05) / (std::min(a, b) + .05) >= 4.5,
+                        qPrintable(mode + ": " + palette.color(pair.first).name() + " on " + palette.color(pair.second).name()));
                 }
                 if (qEnvironmentVariableIsSet("STABLE_MOUSE_THEME_CAPTURE")) {
                     const auto folder = qEnvironmentVariable("STABLE_MOUSE_THEME_CAPTURE"); QDir().mkpath(folder);
