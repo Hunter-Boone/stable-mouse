@@ -51,7 +51,7 @@ The browser fixes speed at 100% and marks clicks without cancelling movement.
 To repeat with a local Chrome debugging session on port 9227 and the HTTP server
 above, run `node tests/web/check-browser.mjs http://localhost:8080/`.
 
-Version 0.1.7 adds light and dark themes, a blue accent, and a Windows setup launch checkbox. The download links and update
+Version 0.1.8 enlarges controls, gives each kind of button a distinct look, and caps the reading width. The download links and update
 instructions point to this release; the demo filter is unchanged.
 
 When publishing a new application release, update the version, asset links and
